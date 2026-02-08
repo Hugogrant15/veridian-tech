@@ -30,8 +30,8 @@ const Careers = () => {
           Join the Frontline of Innovation
         </h1>
         <p className="text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
-          At Veridian Tech, we're building the future of digital infrastructure
-          in Africa. Come do the best work of your career.
+          At Veridian Tech, we&apos;re building the future of digital
+          infrastructure in Africa. Come do the best work of your career.
         </p>
       </section>
 
@@ -125,7 +125,7 @@ const Careers = () => {
 
           <div className="mt-12 p-8 bg-blue-50 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-900/30 text-center">
             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-              Don't see your role?
+              Don&apos;t see your role?
             </h3>
             <p className="text-slate-600 dark:text-slate-400 mb-6 font-medium">
               We are always looking for talented individuals. Send your CV and

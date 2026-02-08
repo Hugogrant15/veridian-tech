@@ -17,11 +17,11 @@ const Contact = () => {
               GET IN TOUCH
             </span>
             <h1 className="text-4xl font-bold text-slate-900 dark:text-white mt-2 mb-6">
-              Let's Build Something Great Together.
+              Let&apos;s Build Something Great Together.
             </h1>
             <p className="text-slate-600 dark:text-slate-400 text-lg mb-10">
               Have a project in mind or want to learn more about Project
-              Easypass? We'd love to hear from you.
+              Easypass? We&apos;d love to hear from you.
             </p>
 
             <div className="space-y-8">

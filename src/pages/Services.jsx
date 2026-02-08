@@ -150,9 +150,9 @@ const Services = () => {
                 Innovation & Product Development
               </h2>
               <p className="text-lg text-slate-600 dark:text-slate-400 mb-6">
-                We don't just follow trends; we create them. Our R&D division
-                focuses on building proprietary products that solve real-world
-                problems.
+                We don&apos;t just follow trends; we create them. Our R&D
+                division focuses on building proprietary products that solve
+                real-world problems.
               </p>
               <ul className="space-y-3">
                 {[
@@ -184,7 +184,8 @@ const Services = () => {
           Ready to upgrade your technology?
         </h2>
         <p className="text-slate-400 max-w-2xl mx-auto mb-10">
-          Let's discuss how our services can align with your business goals.
+          Let&apos;s discuss how our services can align with your business
+          goals.
         </p>
         <Link
           to="/contact"
