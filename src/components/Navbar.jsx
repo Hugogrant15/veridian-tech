@@ -4,6 +4,8 @@ import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "./ThemeToggle";
 
+import Logo from "./Logo";
+
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
@@ -22,11 +24,7 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           <Link to="/" className="flex-shrink-0 flex items-center gap-3">
-            <img
-              src="/logo.png"
-              alt="Veridian Tech Logo"
-              className="h-20 w-auto object-contain mix-blend-multiply dark:mix-blend-screen dark:invert"
-            />
+            <Logo className="h-10 w-auto text-blue-600 dark:text-blue-500" />
           </Link>
 
           {/* Desktop Menu */}
