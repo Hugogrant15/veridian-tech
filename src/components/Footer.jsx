@@ -12,7 +12,7 @@ const Footer = () => {
               <img
                 src="/logo-blue.png"
                 alt="Veridian Tech Logo"
-                className="h-12 w-auto object-contain mb-4"
+                className="h-24 w-auto object-contain mb-4"
               />
             </Link>
             <p className="mt-4 text-slate-600 dark:text-slate-400 max-w-sm">
