@@ -8,9 +8,13 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
-            <span className="text-2xl font-bold bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">
-              VERIDIAN TECH
-            </span>
+            <Link to="/" className="inline-block">
+              <img
+                src="/logo-blue.png"
+                alt="Veridian Tech Logo"
+                className="h-12 w-auto object-contain mb-4"
+              />
+            </Link>
             <p className="mt-4 text-slate-600 dark:text-slate-400 max-w-sm">
               Innovating the future with secure, scalable, and intelligent
               software solutions. Registered with the CAC as a Limited Liability
