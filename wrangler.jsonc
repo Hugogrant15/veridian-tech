@@ -6,6 +6,12 @@
   "name": "veridian-tech",
   "main": "worker/index.js",
   "compatibility_date": "2026-11-01",
+  // Cloudflare creates the DNS records for these. The bare domain is canonical:
+  // a dashboard Redirect Rule ("Redirect from WWW to root") sends www to it.
+  "routes": [
+    { "pattern": "veridiantechinnovationsltd.com", "custom_domain": true },
+    { "pattern": "www.veridiantechinnovationsltd.com", "custom_domain": true }
+  ],
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
