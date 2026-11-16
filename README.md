@@ -72,3 +72,11 @@ Until the first three are set the endpoint returns `503 not_configured`, and the
 Cloudflare Workers Builds, connected to this GitHub repo: push to `main` deploys.
 `wrangler.jsonc` serves `dist/` with SPA fallback and runs the Worker only for `/api/*`.
 GitHub Actions (`.github/workflows/ci-cd.yml`) is the quality gate: lint, test, audit, build.
+
+Flow: push to `staging`, wait for CI to pass, then open a PR `staging → main`. Merging it deploys.
+Preview builds are off, so `staging` never deploys.
+
+Domain: `veridiantechinnovationsltd.com` (registered at HostingNigeria, DNS on Cloudflare).
+- The bare domain is canonical, set in `src/config/site.json`.
+- `www` is attached to the Worker too. A Cloudflare Redirect Rule ("Redirect from WWW to root") sends it to the bare domain with a 301.
+- The DNS records for both are created by the `routes` in `wrangler.jsonc`. Do not add A or CNAME records for them by hand.
