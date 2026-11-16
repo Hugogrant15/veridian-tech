@@ -7,23 +7,17 @@
     <link rel="icon" type="image/png" href="/veridian-signature.png" />
     <link rel="preload" href="/fonts/InterTight-variable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/InstrumentSerif-400-italic.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- seo: fallback for `npm run dev`. The build replaces this whole block with each page's own tags (scripts/prerender.mjs). Only SEO tags go in here. -->
     <title>Veridian Tech Innovations Ltd | Websites, online stores and apps</title>
-    <meta
-      name="description"
-      content="Veridian Tech Innovations Ltd (RC 9367650) designs and builds websites, online stores and mobile apps for Nigerian businesses, and is the maker of EasyPass."
-    />
+    <!-- /seo -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="%SITE_ORIGIN%/" />
+    <meta property="og:site_name" content="Veridian Tech Innovations Ltd" />
     <meta property="og:image" content="%SITE_ORIGIN%/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta property="og:site_name" content="Veridian Tech Innovations Ltd" />
-    <meta property="og:title" content="Your business, properly online. | Veridian Tech" />
-    <meta
-      property="og:description"
-      content="Websites, online stores and mobile apps for Nigerian businesses, from the makers of EasyPass."
-    />
+    <!-- Content fades in with JavaScript; without it, show everything. -->
+    <noscript><style>.reveal, .rise { opacity: 1 !important; transform: none !important; animation: none !important; }</style></noscript>
   </head>
   <body>
     <div id="root"></div>

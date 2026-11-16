@@ -1,5 +1,6 @@
 // Visuals for the dark page headers. Both use only real Veridian work.
 import type { CSSProperties } from "react";
+import { Shot } from "./ui";
 
 const WALL_COLUMNS = [
   { speed: "70s", offset: "0%", images: ["/work/uwaoma.jpg", "/work/rhemaverse.jpg", "/work/prinx.jpg"] },
@@ -21,7 +22,7 @@ export function PortfolioWall() {
               {/* The list is doubled so the drift loops without a jump. */}
               {[...col.images, ...col.images].map((src, i) => (
                 <div key={i} className="overflow-hidden rounded-[8px] border border-gold/40 bg-white">
-                  <img src={src} alt="" loading="lazy" width={1440} height={900} className="aspect-[16/10] w-full object-cover object-top" />
+                  <Shot sizes="(min-width: 1024px) 16vw, 30vw" src={src} alt="" loading="lazy" className="aspect-[16/10] w-full object-cover object-top" />
                 </div>
               ))}
             </div>
@@ -57,7 +58,7 @@ export function DeviceStack() {
         </div>
         <div className="relative aspect-[16/10]">
           {SCREENS.map((s) => (
-            <img key={s.desktop} src={s.desktop} alt="" width={1440} height={900} className="xfade absolute inset-0 size-full object-cover object-top" style={{ animationDelay: s.delay }} />
+            <Shot sizes="(min-width: 640px) 480px, 80vw" key={s.desktop} src={s.desktop} alt="" className="xfade absolute inset-0 size-full object-cover object-top" style={{ animationDelay: s.delay }} />
           ))}
         </div>
       </div>
@@ -65,7 +66,7 @@ export function DeviceStack() {
       <div className="absolute right-0 bottom-0 w-[30%] rounded-[22px] border border-gold/50 bg-[#03140D] p-[5px] shadow-[0_40px_70px_-25px_rgb(0_0_0/0.7)]">
         <div className="relative aspect-[390/844] overflow-hidden rounded-[17px]">
           {SCREENS.map((s) => (
-            <img key={s.phone} src={s.phone} alt="" width={780} height={1688} className="xfade absolute inset-0 size-full object-cover object-top" style={{ animationDelay: s.delay }} />
+            <Shot sizes="(min-width: 640px) 170px, 28vw" key={s.phone} src={s.phone} alt="" className="xfade absolute inset-0 size-full object-cover object-top" style={{ animationDelay: s.delay }} />
           ))}
         </div>
       </div>

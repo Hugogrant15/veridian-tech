@@ -1,6 +1,6 @@
 import { ArrowUpRight, Clock } from "lucide-react";
 import { CLIENT_PROJECTS, type ClientProject } from "../config/portfolio";
-import { Accent, ArrowLink, BrowserFrame, SectionHeading } from "../components/ui";
+import { Accent, ArrowLink, BrowserFrame, SectionHeading, Shot } from "../components/ui";
 
 const hostOf = (url: string) => new URL(url).host;
 
@@ -9,12 +9,11 @@ function ProjectCard({ project, index }: { project: ClientProject; index: number
     <>
       <BrowserFrame label={project.url ? hostOf(project.url) : "Launching soon"}>
         {project.image ? (
-          <img
+          <Shot
+            sizes="(min-width: 1024px) 50vw, 92vw"
             src={project.image}
             alt={`The ${project.name} website`}
             loading="lazy"
-            width={1440}
-            height={900}
             className="shot absolute inset-0 size-full object-cover object-top"
           />
         ) : (

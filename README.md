@@ -80,3 +80,16 @@ Domain: `veridiantechinnovationsltd.com` (registered at HostingNigeria, DNS on C
 - The bare domain is canonical, set in `src/config/site.json`.
 - `www` is attached to the Worker too. A Cloudflare Redirect Rule ("Redirect from WWW to root") sends it to the bare domain with a 301.
 - The DNS records for both are created by the `routes` in `wrangler.jsonc`. Do not add A or CNAME records for them by hand.
+
+## SEO build
+
+`npm run build` type-checks, builds the browser bundle, builds a server bundle
+(`src/entry-server.tsx` into `dist-server/`), then runs `scripts/prerender.mjs`.
+
+- **Every route ships as finished HTML** (`dist/about.html` is served at `/about`), with its own title, description, canonical and preview tags. They come from the page's `<Seo>` component, so there is one place to edit. The browser takes each page over with `hydrateRoot`.
+- **Adding a page:** add the route in `src/App.tsx` AND in `src/config/site.json`. The sitemap and the prerender follow. The build fails if the two disagree.
+- **`dist/404.html`** is served with a real 404 status (`not_found_handling: "404-page"` in `wrangler.jsonc`).
+- **Images:** after adding or replacing anything in `public/work/`, run `npm run images` and commit the `.webp` files and `src/config/image-manifest.json`. Render them with `<Shot>` (`src/components/ui.tsx`). The build fails if a page loads a file that is not there.
+- **Caching and security headers:** `public/_headers`.
+- **IndexNow:** on every push to `main`, the `indexnow` job in CI tells Bing which pages changed (`scripts/indexnow.mjs`, using `dist/content-manifest.json`). The key in `site.json` is public by design.
+- **Hydration rule:** the first browser render must match the prerendered HTML. Never read `window`, the URL query or storage during render; see `EnquiryForm` for the pattern.

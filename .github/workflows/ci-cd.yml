@@ -35,3 +35,30 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  # After a push to main, tell Bing which pages changed (scripts/indexnow.mjs).
+  # Cloudflare deploys the same commit in parallel; the script waits for it.
+  # No `needs`: the first step must run before that deploy lands.
+  indexnow:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Save the live page hashes (the previous deploy)
+        run: curl -sf "https://$(jq -r .domain src/config/site.json)/content-manifest.json" -o previous-manifest.json || true
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Submit changed pages
+        run: node scripts/indexnow.mjs previous-manifest.json
