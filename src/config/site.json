@@ -1,0 +1,5 @@
+{
+  "$comment": "Shared by the app (canonical links) and vite.config.js (sitemap.xml, robots.txt). The bare domain is canonical; www redirects to it.",
+  "domain": "veridiantechinnovationsltd.com",
+  "routes": ["/", "/services", "/work", "/products", "/about", "/contact", "/careers", "/privacy"]
+}

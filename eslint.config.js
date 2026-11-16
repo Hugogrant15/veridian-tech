@@ -2,38 +2,28 @@ import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
-import { defineConfig, globalIgnores } from "eslint/config";
-
 import reactPlugin from "eslint-plugin-react";
+import tseslint from "typescript-eslint";
 
-export default defineConfig([
-  globalIgnores(["dist"]),
+export default tseslint.config(
+  { ignores: ["dist", ".wrangler", "marketing"] },
   {
-    files: ["**/*.{js,jsx}"],
-    extends: [js.configs.recommended, reactHooks.configs.flat.recommended],
-    plugins: {
-      react: reactPlugin,
-      "react-refresh": reactRefresh,
-    },
-    languageOptions: {
-      ecmaVersion: 2020,
-      globals: globals.browser,
-      parserOptions: {
-        ecmaVersion: "latest",
-        ecmaFeatures: { jsx: true },
-        sourceType: "module",
-      },
-    },
-    settings: { react: { version: "18.3" } },
+    files: ["**/*.js"],
+    extends: [js.configs.recommended],
+    languageOptions: { ecmaVersion: "latest", sourceType: "module", globals: globals.browser },
+  },
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    extends: [js.configs.recommended, ...tseslint.configs.strict, reactHooks.configs.flat.recommended],
+    plugins: { react: reactPlugin, "react-refresh": reactRefresh },
+    languageOptions: { globals: globals.browser },
+    settings: { react: { version: "19.2" } },
     rules: {
       ...reactPlugin.configs.recommended.rules,
       ...reactPlugin.configs["jsx-runtime"].rules,
-      "react-refresh/only-export-components": [
-        "warn",
-        { allowConstantExport: true },
-      ],
       "react/prop-types": "off",
-      "no-unused-vars": ["error", { varsIgnorePattern: "^[A-Z_]" }],
+      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "@typescript-eslint/no-explicit-any": "error",
     },
   },
-]);
+);
