@@ -1,17 +1,74 @@
-# React + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
 # veridian-tech
+
+Company website for **Veridian Tech Innovations Ltd** (RC 9367650), the company behind EasyPass.
+
+React 19 · TypeScript (strict) · Vite 7 · Tailwind 4 · Cloudflare Workers (static assets + one API route).
+
+## Commands
+
+| | |
+|---|---|
+| `npm run dev` | Vite dev server (the contact form has no API here, so it shows its failure state) |
+| `npm run typecheck` | `tsc --noEmit` (single tsconfig, so this really checks `src/`) |
+| `npm run lint` | ESLint with typescript-eslint strict |
+| `npm test` | Contact endpoint tests (`node --test`) |
+| `npm run build` | Typecheck, then production build into `dist/` |
+| `npx wrangler dev` | Built site + Worker locally, the closest thing to production |
+
+Gate before every commit: `npm run lint && npm test && npm run build`.
+
+## Structure
+
+| Path | What lives there |
+|---|---|
+| `src/config/` | **All content facts**: `company.ts`, `services.ts`, `portfolio.ts` (client work), `products.ts` (EasyPass, RhemaVerse) |
+| `src/components/` | Navbar, Footer, floating WhatsApp/call buttons, `ui.tsx` (split button, links, headings), `CircuitArt` |
+| `src/sections/` | Home-page sections, reused by inner pages |
+| `src/pages/` | One file per route |
+| `src/index.css` | Emerald & Champagne tokens and every effect; all motion has a `prefers-reduced-motion` fallback |
+| `public/work/` | Portfolio screenshots (top screen of each live site only) |
+| `public/fonts/` | Self-hosted Inter Tight and Instrument Serif (no Google Fonts request) |
+
+Light theme only: the logo's charcoal half disappears on dark backgrounds.
+
+## Company facts and portfolio
+
+Every name, number and address lives in `src/config/company.ts`. Pages read from there; never hardcode them.
+**Never invent a fact.** `veridiantech.com` belongs to someone else; never use it.
+
+To add client work, add one entry to `src/config/portfolio.ts` and a screenshot to `public/work/`.
+Keep `url: null` until the site is publicly live (the card shows "Launching soon").
+Clients are listed independently; never describe any two as related.
+RhemaVerse is described without naming any church or customer.
+
+## Contact form
+
+`POST /api/contact` is handled by `worker/contact.js`:
+
+- **Sandbox by default.** Brevo accepts the send and delivers nothing unless `BREVO_LIVE` is exactly `true`.
+  Go live only after the sending domain passes DKIM, SPF and DMARC, then send one real test to our own inbox.
+  Never loop or load-test the live form.
+- **Only the office is emailed.** The visitor's address goes in Reply-To. Never add a visitor receipt: emailing a typed-in address makes the form an open relay.
+- Honeypot field (`fax`), input validation, 16 KB body cap, and a rate limit of 5 per minute per IP (`CONTACT_LIMITER`).
+- The form (`src/components/EnquiryForm.tsx`) takes **one** choice on step 1 (the Worker rejects a list); a tap or click moves straight on, while keyboard arrows only change the choice and Continue confirms. It branches on that choice. Anything in the **build** group: what → timing and budget → details (3 steps). Only **other** options (Consultation, Partnership, Careers, General question): what → details (2 steps), and the message is required. Careers also asks for a role (required) and a LinkedIn or portfolio link (optional). There is deliberately no CV upload.
+  Its option lists live in `src/config/enquiry-options.json`, which the Worker imports too, so an id the form sends is always one the Worker knows.
+  Unknown ids are dropped, never trusted. Extra needs go in the last step's message box (its placeholder prompts for them). Email **or** phone is required, not both.
+- In production a sandboxed send (`sandbox: true`) is treated as **not delivered**: the visitor gets the WhatsApp fallback with their request pre-typed, so no lead is silently lost.
+- `/contact?service=<id>` opens the form with that service ticked (used by "Start this project" on the Services page).
+
+Secrets, set in the Cloudflare dashboard (Worker → Settings → Variables and Secrets), never in the repo:
+
+| Name | Value |
+|---|---|
+| `BREVO_API_KEY` | Veridian's own Brevo account key |
+| `MAIL_FROM` | Sender on our authenticated domain, e.g. `noreply@<domain>` |
+| `CONTACT_TO` | The inbox that receives enquiries |
+| `BREVO_LIVE` | `true` only when going live |
+
+Until the first three are set the endpoint returns `503 not_configured`, and the form tells visitors to call instead.
+
+## Deploy
+
+Cloudflare Workers Builds, connected to this GitHub repo: push to `main` deploys.
+`wrangler.jsonc` serves `dist/` with SPA fallback and runs the Worker only for `/api/*`.
+GitHub Actions (`.github/workflows/ci-cd.yml`) is the quality gate: lint, test, audit, build.
