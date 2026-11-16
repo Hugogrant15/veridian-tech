@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -194,8 +194,24 @@ function ChoiceTile({
   );
 }
 
+const noSubscription = () => () => {};
+
+/**
+ * The prerendered page always shows an empty form, so the first browser render
+ * must match it. Once React has taken the page over, the form is mounted again
+ * with the visitor's saved draft and any ?service= choice.
+ */
 export function EnquiryForm() {
-  const [draft, setDraft] = useState<Draft>(initialDraft);
+  const hydrated = useSyncExternalStore(
+    noSubscription,
+    () => true,
+    () => false,
+  );
+  return <Form key={hydrated ? "live" : "prerendered"} initial={hydrated ? initialDraft() : EMPTY} />;
+}
+
+function Form({ initial }: { initial: Draft }) {
+  const [draft, setDraft] = useState<Draft>(initial);
   const [step, setStep] = useState<Step>(1);
   const [status, setStatus] = useState<Status>("idle");
   const [errors, setErrors] = useState<FieldErrors>({});

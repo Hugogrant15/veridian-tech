@@ -4,7 +4,7 @@ import { COMPANY, formatAddress } from "../config/company";
 import { LEADER, MILESTONES, STATEMENT, STORY, TEAM } from "../config/about";
 import { PageHeader } from "../components/PageHeader";
 import { CircuitWatermark } from "../components/CircuitArt";
-import { Eyebrow, Seo } from "../components/ui";
+import { Eyebrow, Seo, Shot } from "../components/ui";
 import { CtaBand } from "../sections/CtaBand";
 import { Manifesto } from "../sections/Manifesto";
 
@@ -114,11 +114,10 @@ export default function About() {
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 py-24 sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20 lg:px-10 lg:py-28">
           <div className="reveal relative mx-auto w-full max-w-[420px]">
             <div aria-hidden="true" className="absolute inset-0 translate-x-4 translate-y-4 rounded-[10px] border border-gold" />
-            <img
+            <Shot
+              sizes="(min-width: 1024px) 480px, 92vw"
               src={LEADER.photo}
               alt={`${LEADER.name}, ${LEADER.title}`}
-              width={976}
-              height={1220}
               loading="lazy"
               className="relative aspect-[4/5] w-full rounded-[10px] object-cover object-top"
             />
@@ -149,12 +148,11 @@ export default function About() {
                 <div aria-hidden="true" className="absolute inset-0 rounded-[10px] border border-gold opacity-0 transition-[transform,opacity] duration-500 group-hover:translate-x-3 group-hover:translate-y-3 group-hover:opacity-100" />
                 <div className="relative aspect-[4/5] overflow-hidden rounded-[10px] bg-night">
                   {member.photo ? (
-                    <img
+                    <Shot
+                      sizes="(min-width: 1024px) 30vw, (min-width: 640px) 46vw, 92vw"
                       src={member.photo}
                       alt={`${member.name}, ${member.role}`}
                       loading="lazy"
-                      width={740}
-                      height={925}
                       className="size-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.04]"
                     />
                   ) : (

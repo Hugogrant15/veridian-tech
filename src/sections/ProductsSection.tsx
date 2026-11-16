@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 import { EASYPASS, RHEMAVERSE } from "../config/products";
-import { Accent, SectionHeading, SplitButton } from "../components/ui";
+import { Accent, SectionHeading, SplitButton, Shot } from "../components/ui";
 
 const linkOnNight =
   "lnk text-pearl [background-image:linear-gradient(90deg,#3FD38A,#E4C77E)]";
@@ -44,12 +44,11 @@ export function ProductsSection({ detailed = false, heading = true }: { detailed
         <div className="grid gap-8 lg:grid-cols-2">
           <article id="easypass" className="night-card reveal flex flex-col gap-6 p-6 sm:p-8">
             <div className="overflow-hidden rounded-[10px] border border-gold/25">
-              <img
+              <Shot
+                sizes="(min-width: 1024px) 50vw, 92vw"
                 src={EASYPASS.image}
                 alt="The EasyPass website"
                 loading="lazy"
-                width={1440}
-                height={900}
                 className="aspect-[16/10] w-full object-cover object-top"
               />
             </div>
@@ -71,12 +70,11 @@ export function ProductsSection({ detailed = false, heading = true }: { detailed
 
           <article id="rhemaverse" className="night-card reveal flex flex-col gap-6 p-6 sm:p-8" style={{ transitionDelay: "100ms" }}>
             <div className="overflow-hidden rounded-[10px] border border-gold/25">
-              <img
+              <Shot
+                sizes="(min-width: 1024px) 50vw, 92vw"
                 src={RHEMAVERSE.image}
                 alt="RhemaVerse live: the sermon transcript, the verses it recognised, and the next verse queued for the screens"
                 loading="lazy"
-                width={1440}
-                height={900}
                 className="aspect-[16/10] w-full object-cover object-top"
               />
             </div>

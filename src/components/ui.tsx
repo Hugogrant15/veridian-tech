@@ -1,7 +1,8 @@
 // Small shared building blocks: buttons, links, eyebrows, headings, frames.
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { SITE_ORIGIN } from "../config/company";
+import imageManifest from "../config/image-manifest.json";
 import { ArrowUpRight } from "lucide-react";
 
 export const ArrowIcon = ({ size = 20 }: { size?: number }) => (
@@ -184,17 +185,45 @@ export const WhatsAppGlyph = ({ className = "size-7" }: { className?: string }) 
 );
 
 /**
- * Page title, description and canonical link. React 19 hoists these into <head>.
+ * Everything a page puts in <head>: title, description, canonical and the
+ * link-preview tags. React 19 hoists these into <head>; the build-time
+ * prerender (scripts/prerender.mjs) bakes the same tags into each page's HTML.
  * The canonical drops any query string, so /contact?service=x counts as /contact.
  * `noindex` is for pages that must never be indexed (the 404).
  */
 export function Seo({ title, description, noindex = false }: { title: string; description: string; noindex?: boolean }) {
   const { pathname } = useLocation();
+  const url = `${SITE_ORIGIN}${pathname}`;
   return (
     <>
       <title>{title}</title>
       <meta name="description" content={description} />
-      {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={`${SITE_ORIGIN}${pathname}`} />}
+      {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={url} />}
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
+      {!noindex && <meta property="og:url" content={url} />}
     </>
+  );
+}
+
+const IMAGES: Record<string, { width: number; height: number; widths: number[] }> = imageManifest;
+
+/**
+ * A photo or screenshot from public/work. The browser picks the smallest WebP
+ * copy that fits `sizes` (made by `npm run images`); the original is the fallback.
+ */
+export function Shot({ src, sizes, alt, ...rest }: Omit<ComponentProps<"img">, "srcSet" | "width" | "height"> & { src: string; sizes: string; alt: string }) {
+  const image = IMAGES[src];
+  const base = src.replace(/\.\w+$/, "");
+  return (
+    <img
+      src={src}
+      srcSet={image?.widths.map((w) => `${base}-${w}.webp ${w}w`).join(", ")}
+      sizes={image ? sizes : undefined}
+      width={image?.width}
+      height={image?.height}
+      alt={alt}
+      {...rest}
+    />
   );
 }

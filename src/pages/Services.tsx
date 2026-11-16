@@ -4,7 +4,7 @@ import { SERVICES, type Service } from "../config/services";
 import { PageHeader } from "../components/PageHeader";
 import { DeviceStack } from "../components/HeaderVisuals";
 import { ServiceArt } from "../components/ServiceArt";
-import { Accent, Seo, SplitButton } from "../components/ui";
+import { Accent, Seo, SplitButton, Shot } from "../components/ui";
 import { ProcessSection } from "../sections/ProcessSection";
 import { CtaBand } from "../sections/CtaBand";
 
@@ -42,7 +42,7 @@ function ChapterVisual({ service }: { service: Service }) {
           <span className="size-2 rounded-full bg-line" />
           <span className="size-2 rounded-full bg-line" />
         </div>
-        <img src={service.example.image} alt={service.example.caption} loading="lazy" width={1440} height={900} className="aspect-[16/10] w-full object-cover object-top" />
+        <Shot sizes="(min-width: 1024px) 50vw, 92vw" src={service.example.image} alt={service.example.caption} loading="lazy" className="aspect-[16/10] w-full object-cover object-top" />
       </div>
       <figcaption className="text-sm text-muted">{service.example.caption}</figcaption>
     </figure>

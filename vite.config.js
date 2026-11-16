@@ -58,6 +58,9 @@ function seoFiles() {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss(), seoFiles()],
+  // The build-time server bundle (entry-server.tsx) carries its own React and router,
+  // so it never ends up with two copies of React.
+  ssr: { noExternal: true },
   resolve: {
     alias: {
       react: path.resolve("./node_modules/react"),

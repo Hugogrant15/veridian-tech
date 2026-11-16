@@ -1,5 +1,6 @@
-// Cloudflare Workers: serves the built site from ./dist and runs the Worker
-// only for /api/*. Deploys come from Workers Builds on push to `main`.
+// Cloudflare Workers: serves the prerendered pages from ./dist (about.html is
+// served at /about; unknown paths get 404.html with a real 404 status) and runs
+// the Worker only for /api/*. Deploys come from Workers Builds on push to `main`.
 // Secrets (set in the dashboard, never here): BREVO_API_KEY, MAIL_FROM,
 // CONTACT_TO. BREVO_LIVE="true" switches off sandbox mode.
 {
@@ -15,7 +16,7 @@
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
-    "not_found_handling": "single-page-application",
+    "not_found_handling": "404-page",
     "run_worker_first": ["/api/*"]
   },
   "ratelimits": [
