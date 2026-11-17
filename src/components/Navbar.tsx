@@ -5,6 +5,7 @@ import { SplitButton } from "./ui";
 
 export const NAV_LINKS = [
   { name: "Services", to: "/services" },
+  { name: "IT Supply", to: "/it-supply" },
   { name: "Work", to: "/work" },
   { name: "Products", to: "/products" },
   { name: "About", to: "/about" },

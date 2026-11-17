@@ -11,6 +11,9 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Careers from "./pages/Careers";
 import Privacy from "./pages/Privacy";
+import Supply from "./pages/Supply";
+import SupplyService from "./pages/SupplyService";
+import OrderBuilder from "./pages/OrderBuilder";
 import NotFound from "./pages/NotFound";
 
 function Layout() {
@@ -37,6 +40,9 @@ export function AppRoutes() {
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
         <Route path="/services" element={<Services />} />
+        <Route path="/it-supply" element={<Supply />} />
+        <Route path="/it-supply/build-your-order" element={<OrderBuilder />} />
+        <Route path="/it-supply/:id" element={<SupplyService />} />
         <Route path="/work" element={<Work />} />
         <Route path="/products" element={<Products />} />
         <Route path="/about" element={<About />} />

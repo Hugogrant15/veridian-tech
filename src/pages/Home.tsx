@@ -1,6 +1,7 @@
 import { Seo } from "../components/ui";
 import { Hero } from "../sections/Hero";
 import { ServicesSection } from "../sections/ServicesSection";
+import { SupplyBand } from "../sections/SupplyBand";
 import { WorkSection } from "../sections/WorkSection";
 import { ProductsSection } from "../sections/ProductsSection";
 import { ProcessSection } from "../sections/ProcessSection";
@@ -15,6 +16,7 @@ export default function Home() {
       />
       <Hero />
       <ServicesSection />
+      <SupplyBand />
       <WorkSection />
       <ProductsSection />
       <ProcessSection />

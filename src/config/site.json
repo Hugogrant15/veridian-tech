@@ -4,6 +4,13 @@
   "routes": [
     "/",
     "/services",
+    "/it-supply",
+    "/it-supply/build-your-order",
+    "/it-supply/bulk-laptops",
+    "/it-supply/workspace-setup",
+    "/it-supply/networking",
+    "/it-supply/cctv",
+    "/it-supply/printers",
     "/work",
     "/products",
     "/about",
