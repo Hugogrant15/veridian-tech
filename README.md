@@ -93,3 +93,18 @@ Domain: `veridiantechinnovationsltd.com` (registered at HostingNigeria, DNS on C
 - **Caching and security headers:** `public/_headers`.
 - **IndexNow:** on every push to `main`, the `indexnow` job in CI tells Bing which pages changed (`scripts/indexnow.mjs`, using `dist/content-manifest.json`). The key in `site.json` is public by design.
 - **Hydration rule:** the first browser render must match the prerendered HTML. Never read `window`, the URL query or storage during render; see `EnquiryForm` for the pattern.
+
+## IT supply and setup
+
+The company's second side, beside software. Everything renders from `src/config/supply.ts`:
+the hub (`/it-supply`), one page per service (`/it-supply/<id>`) and the order builder
+(`/it-supply/build-your-order`), which turns "who the laptops are for and how many" into a
+specification sheet and sends it through `/api/contact` as the `it-supply` option, or on WhatsApp.
+
+- Adding a supply service: add it to `SUPPLY_SERVICES` and add `/it-supply/<id>` to `src/config/site.json`.
+- **Nothing unconfirmed is claimed:** no past supply projects, no authorised-partner status, no warranty terms, no government registrations. Add a claim only once it is true.
+
+## Quotation (Word)
+
+`documents/quotation/` builds the company quotation template. See its README. The signature,
+the generated files and every real quote are gitignored: this repository is public.

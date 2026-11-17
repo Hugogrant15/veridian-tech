@@ -6,6 +6,7 @@
     { "id": "mobile-apps", "label": "Mobile app", "group": "build" },
     { "id": "redesigns", "label": "Redesign or speed-up", "group": "build" },
     { "id": "seo-mobile", "label": "Get found on Google", "group": "build" },
+    { "id": "it-supply", "label": "IT equipment and setup", "group": "other" },
     { "id": "consultation", "label": "Consultation", "group": "other" },
     { "id": "partnership", "label": "Partnership", "group": "other" },
     { "id": "careers", "label": "Careers", "group": "other" },
