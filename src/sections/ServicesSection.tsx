@@ -32,7 +32,7 @@ export function ServicesSection() {
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
           {SERVICES.map(({ id, Icon, title, description }, i) => (
             <div key={id} className="reveal" style={{ transitionDelay: `${(i % 3) * 80}ms` }}>
-            <Link to={`/services#${id}`} className="night-card flex h-full flex-col gap-4 p-6 sm:p-8">
+            <Link to={`/services/${id}`} className="night-card flex h-full flex-col gap-4 p-6 sm:p-8">
               <div className="flex items-center justify-between">
                 <span className="flex size-12 items-center justify-center rounded-[10px] bg-emerald-bright/10 text-emerald-bright">
                   <Icon size={24} strokeWidth={1.6} aria-hidden="true" />

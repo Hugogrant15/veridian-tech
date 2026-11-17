@@ -14,6 +14,11 @@ import Privacy from "./pages/Privacy";
 import Supply from "./pages/Supply";
 import SupplyService from "./pages/SupplyService";
 import OrderBuilder from "./pages/OrderBuilder";
+import ServiceDetail from "./pages/ServiceDetail";
+import CaseStudy from "./pages/CaseStudy";
+import IndustryPage from "./pages/IndustryPage";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 import NotFound from "./pages/NotFound";
 
 function Layout() {
@@ -40,10 +45,15 @@ export function AppRoutes() {
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
         <Route path="/services" element={<Services />} />
+        <Route path="/services/:id" element={<ServiceDetail />} />
         <Route path="/it-supply" element={<Supply />} />
         <Route path="/it-supply/build-your-order" element={<OrderBuilder />} />
         <Route path="/it-supply/:id" element={<SupplyService />} />
         <Route path="/work" element={<Work />} />
+        <Route path="/work/:id" element={<CaseStudy />} />
+        <Route path="/industries/:id" element={<IndustryPage />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/products" element={<Products />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />

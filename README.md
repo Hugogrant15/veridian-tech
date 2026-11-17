@@ -87,7 +87,8 @@ Domain: `veridiantechinnovationsltd.com` (registered at HostingNigeria, DNS on C
 (`src/entry-server.tsx` into `dist-server/`), then runs `scripts/prerender.mjs`.
 
 - **Every route ships as finished HTML** (`dist/about.html` is served at `/about`), with its own title, description, canonical and preview tags. They come from the page's `<Seo>` component, so there is one place to edit. The browser takes each page over with `hydrateRoot`.
-- **Adding a page:** add the route in `src/App.tsx` AND in `src/config/site.json`. The sitemap and the prerender follow. The build fails if the two disagree.
+- **Adding a page:** fixed pages go in `src/App.tsx` AND `src/config/site.json`. Pages generated from content files (services, IT supply, case studies, industries, blog posts) are listed by `src/config/routes.ts`, so adding an entry to the content file is enough. The prerender writes `sitemap.xml` from the same list. The build fails if a listed route is missing from `App.tsx`.
+- **Structured data:** every page carries the Organization block (from `vite.config.js`). Pages add their own with `<JsonLd>` and the builders in `src/utils/schema.ts`: Service, FAQPage, Article and BreadcrumbList.
 - **`dist/404.html`** is served with a real 404 status (`not_found_handling: "404-page"` in `wrangler.jsonc`).
 - **Images:** after adding or replacing anything in `public/work/`, run `npm run images` and commit the `.webp` files and `src/config/image-manifest.json`. Render them with `<Shot>` (`src/components/ui.tsx`). The build fails if a page loads a file that is not there.
 - **Caching and security headers:** `public/_headers`.
@@ -108,3 +109,14 @@ specification sheet and sends it through `/api/contact` as the `it-supply` optio
 
 `documents/quotation/` builds the company quotation template. See its README. The signature,
 the generated files and every real quote are gitignored: this repository is public.
+
+## Content for search (Phase 1)
+
+| Pages | Content file |
+|---|---|
+| `/services/<id>`: one page per software service, with FAQs | `src/config/services.ts` + `src/config/serviceDetails.ts` |
+| `/work/<id>`: one case study per client site | `src/config/caseStudies.ts` (+ `portfolio.ts`) |
+| `/industries/<id>` | `src/config/industries.ts` |
+| `/blog`, `/blog/<slug>` | `src/content/blog.ts` |
+
+All of it is marked DRAFT for the owner's review. Case studies use only facts that are public on the client's live site. Prices appear only in the pricing guide.

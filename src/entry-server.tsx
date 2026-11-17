@@ -6,6 +6,7 @@ import { StaticRouter } from "react-router-dom";
 import { AppRoutes } from "./App";
 
 export { default as site } from "./config/site.json";
+export { allRoutes } from "./config/routes";
 
 export function render(path: string): string {
   return renderToString(

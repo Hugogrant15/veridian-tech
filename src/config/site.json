@@ -1,16 +1,11 @@
 {
-  "$comment": "Shared by the app (canonical links) and vite.config.js (sitemap.xml, robots.txt). The bare domain is canonical; www redirects to it.",
+  "$comment": "The domain (canonical is the bare domain; www redirects to it) and the fixed pages. Pages generated from content files (services, IT supply, case studies, industries, blog) are added by src/config/routes.ts.",
   "domain": "veridiantechinnovationsltd.com",
   "routes": [
     "/",
     "/services",
     "/it-supply",
     "/it-supply/build-your-order",
-    "/it-supply/bulk-laptops",
-    "/it-supply/workspace-setup",
-    "/it-supply/networking",
-    "/it-supply/cctv",
-    "/it-supply/printers",
     "/work",
     "/products",
     "/about",
