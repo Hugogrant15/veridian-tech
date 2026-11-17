@@ -107,7 +107,7 @@ specification sheet and sends it through `/api/contact` as the `it-supply` optio
 
 ## Quotation (Word)
 
-`documents/quotation/` builds the company quotation template. See its README. The signature,
+`documents/quotation/` builds the quotation template and `documents/letterhead/` the letterhead and letter template. See their READMEs. The signature,
 the generated files and every real quote are gitignored: this repository is public.
 
 ## Content for search (Phase 1)
