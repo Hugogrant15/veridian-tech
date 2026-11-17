@@ -3,12 +3,12 @@
  *
  * Search engines that do not run JavaScript (Bing, AI assistants) and link
  * previews (WhatsApp, LinkedIn) read only the HTML a server sends. So for every
- * route in src/config/site.json this renders the page with React (the server
+ * route in allRoutes() (src/config/routes.ts) this renders the page with React (the server
  * bundle in dist-server/) and writes it into dist/ with that page's own title,
  * description, canonical and preview tags. The browser then takes the page
  * over in place (hydrateRoot in src/main.tsx).
  *
- * Also writes a noindex 404.html, which Cloudflare serves with a real 404
+ * Also writes sitemap.xml, a noindex 404.html, which Cloudflare serves with a real 404
  * status, and content-manifest.json (a hash per page), which
  * scripts/indexnow.mjs uses to tell search engines which pages changed.
  *
@@ -22,7 +22,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const DIST = join(ROOT, "dist");
-const { render, site } = await import(pathToFileURL(join(ROOT, "dist-server", "entry-server.js")).href);
+const { render, site, allRoutes } = await import(pathToFileURL(join(ROOT, "dist-server", "entry-server.js")).href);
 
 const template = await readFile(join(DIST, "index.html"), "utf8");
 const SEO_BLOCK = /<!-- seo:[\s\S]*?<!-- \/seo -->/;
@@ -68,8 +68,9 @@ function pageHtml(path, { notFound = false } = {}) {
 // "/" -> index.html, "/about" -> about.html. Cloudflare serves about.html at /about.
 const fileFor = (path) => join(DIST, path === "/" ? "index.html" : `${path.slice(1)}.html`);
 
+const routes = allRoutes();
 const pages = {};
-for (const path of site.routes) {
+for (const path of routes) {
   const html = pageHtml(path);
   await mkdir(dirname(fileFor(path)), { recursive: true });
   await writeFile(fileFor(path), html);
@@ -79,4 +80,11 @@ for (const path of site.routes) {
 await writeFile(join(DIST, "404.html"), pageHtml("/__not-found__", { notFound: true }));
 await writeFile(join(DIST, "content-manifest.json"), JSON.stringify({ pages }, null, 2));
 
-console.log(`Prerendered ${site.routes.length} pages and 404.html.`);
+const origin = `https://${site.domain}`;
+const urls = routes.map((path) => `  <url><loc>${origin}${path}</loc></url>`).join("\n");
+await writeFile(
+  join(DIST, "sitemap.xml"),
+  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`,
+);
+
+console.log(`Prerendered ${routes.length} pages, 404.html and sitemap.xml.`);

@@ -93,7 +93,7 @@ export const SUPPLY_SERVICES: SupplyService[] = [
       "Supplied, installed and tested",
     ],
     goodFor: "Offices, shops, warehouses, schools and estates.",
-    seoTitle: "CCTV Supply and Installation in Nigeria | Veridian Tech Innovations Ltd",
+    seoTitle: "CCTV Supply and Installation in Nigeria | Veridian Tech",
     seoDescription:
       "CCTV cameras supplied and installed for offices, shops, warehouses and schools in Nigeria, with recording and viewing on your phone.",
   },

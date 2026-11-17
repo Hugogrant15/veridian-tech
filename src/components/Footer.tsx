@@ -37,11 +37,16 @@ export function Footer() {
           <ul className="space-y-3">
             {SERVICES.map((s) => (
               <li key={s.id}>
-                <Link to={`/services#${s.id}`} className={linkClass}>
+                <Link to={`/services/${s.id}`} className={linkClass}>
                   {s.short}
                 </Link>
               </li>
             ))}
+            <li>
+              <Link to="/industries/oil-and-gas" className={linkClass}>
+                Oil and gas websites
+              </Link>
+            </li>
           </ul>
         </div>
 

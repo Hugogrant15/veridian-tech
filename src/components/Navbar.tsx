@@ -9,6 +9,7 @@ export const NAV_LINKS = [
   { name: "Work", to: "/work" },
   { name: "Products", to: "/products" },
   { name: "About", to: "/about" },
+  { name: "Blog", to: "/blog" },
   { name: "Careers", to: "/careers" },
   { name: "Contact", to: "/contact" },
 ] as const;

@@ -1,10 +1,13 @@
-import { ArrowUpRight, Clock } from "lucide-react";
+import { Clock } from "lucide-react";
+import { Link } from "react-router-dom";
+import { CASE_STUDIES } from "../config/caseStudies";
 import { CLIENT_PROJECTS, type ClientProject } from "../config/portfolio";
-import { Accent, ArrowLink, BrowserFrame, SectionHeading, Shot } from "../components/ui";
+import { Accent, ArrowIcon, ArrowLink, BrowserFrame, SectionHeading, Shot } from "../components/ui";
 
 const hostOf = (url: string) => new URL(url).host;
 
 function ProjectCard({ project, index }: { project: ClientProject; index: number }) {
+  const hasStudy = CASE_STUDIES.some((c) => c.id === project.id);
   const body = (
     <>
       <BrowserFrame label={project.url ? hostOf(project.url) : "Launching soon"}>
@@ -29,9 +32,9 @@ function ProjectCard({ project, index }: { project: ClientProject; index: number
           {project.sector} · {project.location}
         </p>
         <p className="text-[15px] text-body">{project.built.join(" · ")}</p>
-        {project.url ? (
+        {hasStudy ? (
           <span className="mt-1 inline-flex items-center gap-1.5 text-[15px] font-semibold text-emerald-deep">
-            Visit site <ArrowUpRight size={17} aria-hidden="true" />
+            Read the case study <ArrowIcon size={17} />
           </span>
         ) : (
           <span className="mt-1 inline-flex items-center gap-1.5 text-[15px] font-medium text-muted">
@@ -44,16 +47,11 @@ function ProjectCard({ project, index }: { project: ClientProject; index: number
 
   return (
     <div className="reveal" style={{ transitionDelay: `${index * 90}ms` }}>
-      {project.url ? (
-        <a
-          href={project.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={`${project.name}: visit the website (opens in a new tab)`}
-          className="work-card block rounded-xl"
-        >
+      {hasStudy ? (
+        // The case study links on to the live site.
+        <Link to={`/work/${project.id}`} aria-label={`${project.name}: read the case study`} className="work-card block rounded-xl">
           {body}
-        </a>
+        </Link>
       ) : (
         <div className="work-card rounded-xl">{body}</div>
       )}

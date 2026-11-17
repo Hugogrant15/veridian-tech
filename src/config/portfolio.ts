@@ -40,11 +40,11 @@ export const CLIENT_PROJECTS: ClientProject[] = [
     name: "Prinx and 3D Oilfield Services Limited",
     sector: "Procurement and supply chain",
     location: "Port Harcourt",
-    built: ["Website", "Product catalogue", "Search-ready pages"],
-    // Not public yet: set the URL once https://www.prinx3doilfieldservicesltd.com is live.
-    url: null,
-    // Products page, captured from the finished local build (2026-11-09) since the site is not public
-    // yet. Products, not home, so the card does not look like the Stuzans one beside it.
+    built: ["Website", "Product catalogue", "Quote requests"],
+    // Live since November 2026 (checked 2026-11-16).
+    url: "https://www.prinx3doilfieldservicesltd.com",
+    // Products page, captured from the finished build (2026-11-09).
+    // Products, not home, so the card does not look like the Stuzans one beside it.
     image: "/work/prinx.jpg",
   },
 ];

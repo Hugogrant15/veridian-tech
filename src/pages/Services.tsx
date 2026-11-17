@@ -4,7 +4,7 @@ import { SERVICES, type Service } from "../config/services";
 import { PageHeader } from "../components/PageHeader";
 import { DeviceStack } from "../components/HeaderVisuals";
 import { ServiceArt } from "../components/ServiceArt";
-import { Accent, Seo, SplitButton, Shot } from "../components/ui";
+import { Accent, ArrowLink, Seo, SplitButton, Shot } from "../components/ui";
 import { ProcessSection } from "../sections/ProcessSection";
 import { CtaBand } from "../sections/CtaBand";
 
@@ -82,7 +82,10 @@ function Chapter({ service, index }: { service: Service; index: number }) {
             {goodFor}
           </p>
           <div className="pt-2">
-            <SplitButton to={`/contact?service=${id}`}>Start this project</SplitButton>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-8">
+              <SplitButton to={`/contact?service=${id}`}>Start this project</SplitButton>
+              <ArrowLink to={`/services/${id}`}>Full details and FAQs</ArrowLink>
+            </div>
           </div>
         </div>
         <div className={`reveal ${flip ? "lg:order-1" : ""}`}>

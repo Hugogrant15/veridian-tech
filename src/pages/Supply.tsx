@@ -27,7 +27,7 @@ export default function Supply() {
   return (
     <>
       <Seo
-        title="IT Equipment Supply and Office Setup in Nigeria | Veridian Tech Innovations Ltd"
+        title="IT Equipment Supply and Office Setup in Nigeria | Veridian Tech"
         description="Bulk laptops, workstation and workspace setup, networking, CCTV and printers for government and private-sector projects, delivered anywhere in Nigeria."
       />
       <PageHeader
