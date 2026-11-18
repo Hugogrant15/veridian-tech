@@ -11,6 +11,20 @@
 /work/*
   Cache-Control: public, max-age=86400
 
+# ── ONE-TIME EXCEPTION — DO NOT DELETE THIS FILE ─────────────────────────────
+# obblink-logo.png belongs to OBB Link Energy Limited, a client. It is NOT a
+# Veridian asset. It is hosted here only so their email signature renders, agreed
+# 2026-11-18 as a deliberate one-off, not to be repeated for any other client —
+# everyone else hosts their own.
+#
+# It can never be deleted. Email is write-once: every message OBB has already
+# sent carries this exact URL, so removing the file breaks the logo retroactively
+# in mail already sitting in other people's inboxes, which cannot be recalled.
+# When OBB Link's own site goes live, point NEW signatures at their domain and
+# replace this with a redirect to it — never with a deletion.
+/obblink-logo.png
+  Cache-Control: public, max-age=604800
+
 /*
   Strict-Transport-Security: max-age=31536000
   X-Content-Type-Options: nosniff
