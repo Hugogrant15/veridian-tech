@@ -78,7 +78,10 @@ function Brand() {
     <span className="flex items-center gap-2.5">
       <img src="/veridian-mark.png" alt="" width={175} height={149} className="h-8 w-auto" />
       <span className="flex flex-col leading-none">
-        <span className="text-[17px] font-semibold tracking-[-0.01em] text-ink">Veridian Tech</span>
+        {/* "Veridian" in the logo's green (#11A159), "Tech" in ink, as in the wordmark. */}
+        <span className="text-[17px] font-semibold tracking-[-0.01em] text-ink">
+          <span className="text-emerald">Veridian</span> Tech
+        </span>
         <span className="mt-1 text-[9px] font-semibold tracking-[0.2em] text-muted uppercase">Innovations Ltd</span>
       </span>
     </span>
