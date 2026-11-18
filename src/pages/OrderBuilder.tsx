@@ -6,6 +6,7 @@ import { BRANDS, PURCHASE_TYPES, STAFF_PROFILES, SUPPLY_SERVICES, type StaffProf
 import { PageHeader } from "../components/PageHeader";
 import { Accent, Seo, WhatsAppGlyph } from "../components/ui";
 import { FileDrop } from "../components/FileDrop";
+import { DeliveryFields, type Delivery } from "../components/DeliveryFields";
 import OPTIONS from "../config/enquiry-options.json";
 
 const OPERATING_SYSTEMS = ["No preference", "Windows 11 Pro", "Windows 11 Home", "macOS", "Linux"] as const;
@@ -44,8 +45,7 @@ export default function OrderBuilder() {
   const [brand, setBrand] = useState<string>(BRANDS[0]);
   const [os, setOs] = useState<string>(OPERATING_SYSTEMS[0]);
   const [addOns, setAddOns] = useState<string[]>([]);
-  const [location, setLocation] = useState("");
-  const [neededBy, setNeededBy] = useState("");
+  const [delivery, setDelivery] = useState<Delivery>({ state: "", city: "", neededBy: "", neededDate: "" });
   const [purchaseType, setPurchaseType] = useState<string>(PURCHASE_TYPES[0]);
   const [note, setNote] = useState("");
   const [contact, setContact] = useState({ name: "", business: "", email: "", phone: "" });
@@ -78,7 +78,9 @@ export default function OrderBuilder() {
     lines.push(`Total laptops: ${total}`, `Brand preference: ${brand}`, `Operating system: ${os}`);
     const extras = ADD_ONS.filter((s) => addOns.includes(s.id)).map((s) => s.short);
     if (extras.length) lines.push(`Also needed: ${extras.join(", ")}`);
-    lines.push(`Delivery location: ${location.trim() || "not given"}`, `Needed by: ${neededBy.trim() || "not given"}`, `Purchase type: ${purchaseType}`);
+    const place = [delivery.city.trim(), delivery.state].filter(Boolean).join(", ");
+    const when = delivery.neededBy === "date" ? delivery.neededDate : OPTIONS.neededBy.find((o) => o.id === delivery.neededBy)?.label;
+    lines.push(`Delivery location: ${place || "not given"}`, `Needed by: ${when || "not given"}`, `Purchase type: ${purchaseType}`);
     if (note.trim()) lines.push("", `Note: ${note.trim()}`);
     return lines.join("\n");
   };
@@ -112,8 +114,10 @@ export default function OrderBuilder() {
         service: "it-supply",
         ...contact,
         supplyItems,
-        location,
-        neededBy,
+        deliveryState: delivery.state,
+        location: delivery.city,
+        neededBy: delivery.neededBy,
+        neededDate: delivery.neededDate,
         purchaseType: purchaseId(purchaseType),
         message: specText(),
         fax,
@@ -262,19 +266,8 @@ export default function OrderBuilder() {
 
           <fieldset>
             <legend className={legendClass}>3. Delivery</legend>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label htmlFor="location" className={labelClass}>
-                  Delivery location
-                </label>
-                <input id="location" maxLength={120} placeholder="City and state" value={location} onChange={(e) => setLocation(e.target.value)} className={inputClass} />
-              </div>
-              <div>
-                <label htmlFor="neededBy" className={labelClass}>
-                  Needed by
-                </label>
-                <input id="neededBy" maxLength={80} placeholder="A date, or e.g. within 4 weeks" value={neededBy} onChange={(e) => setNeededBy(e.target.value)} className={inputClass} />
-              </div>
+            <DeliveryFields value={delivery} onChange={setDelivery} idPrefix="order-delivery" />
+            <div className="mt-5 grid gap-5 sm:grid-cols-2">
               <div>
                 <label htmlFor="purchaseType" className={labelClass}>
                   Type of purchase

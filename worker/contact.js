@@ -38,6 +38,19 @@ const TIMELINE_LABELS = labelsOf(OPTIONS.timelines);
 const BUDGET_LABELS = labelsOf(OPTIONS.budgets);
 export const SUPPLY_ITEMS = new Map(OPTIONS.supplyItems.map((o) => [o.id, o]));
 const PURCHASE_LABELS = labelsOf(OPTIONS.purchaseTypes);
+const STATES = new Set(OPTIONS.states);
+const NEEDED_BY_LABELS = labelsOf(OPTIONS.neededBy);
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** "15 Dec 2026" for a real date from today (Lagos) onwards; "" for anything else. */
+export function neededByDate(value, now = new Date()) {
+  if (typeof value !== "string" || !ISO_DATE.test(value)) return "";
+  const date = new Date(`${value}T12:00:00Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) return "";
+  const today = now.toLocaleDateString("en-CA", { timeZone: "Africa/Lagos" });
+  if (value < today) return "";
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+}
 /** The IT supply option: its own fields, an optional message, and file uploads. */
 export const isSupply = (service) => service === "it-supply";
 
@@ -104,8 +117,12 @@ export function validate(input, { hasFiles = false } = {}) {
         const n = Number.parseInt(String(qty ?? "").replace(/\D/g, "").slice(0, 6), 10);
         return { id, qty: SUPPLY_ITEMS.get(id).qtyLabel && n > 0 ? n : 0 };
       });
-    data.location = clean(input.location);
-    data.neededBy = clean(input.neededBy);
+    // Delivery: a state from the fixed list plus a typed city or area, shown as "Ikeja, Lagos".
+    const state = STATES.has(input.deliveryState) ? input.deliveryState : "";
+    const city = clean(input.location);
+    data.location = [city, state].filter(Boolean).join(", ");
+    // Needed by: a fixed choice, or a picked date that is today or later.
+    data.neededBy = input.neededBy === "date" ? neededByDate(input.neededDate) : NEEDED_BY_LABELS.get(input.neededBy) || "";
     data.purchaseType = pick(input.purchaseType, PURCHASE_LABELS);
   }
   const careers = data.service === "careers";

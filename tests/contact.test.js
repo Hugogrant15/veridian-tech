@@ -1,6 +1,6 @@
 import { test, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
-import { handleContact, summarise, validate } from "../worker/contact.js";
+import { handleContact, neededByDate, summarise, validate } from "../worker/contact.js";
 import { whatsappNumber } from "../worker/office.js";
 
 const env = { MAILJET_API_KEY: "key", MAILJET_SECRET_KEY: "secret", MAIL_FROM: "noreply@example.test", CONTACT_TO: "office@example.test" };
@@ -281,7 +281,7 @@ test("WhatsApp links use the international form of Nigerian numbers", () => {
 
 // ---------- IT supply quote requests with attachments ----------
 
-const supply = { service: "it-supply", name: "Ada Obi", business: "Acme Ltd", email: "ada@example.test", supplyItems: { "bulk-laptops": "40", cctv: "8", networking: "", nonsense: "5" }, location: "Abuja, FCT", neededBy: "within 4 weeks", purchaseType: "tender" };
+const supply = { service: "it-supply", name: "Ada Obi", business: "Acme Ltd", email: "ada@example.test", supplyItems: { "bulk-laptops": "40", cctv: "8", networking: "", nonsense: "5" }, location: "Wuse 2", deliveryState: "FCT (Abuja)", neededBy: "2-weeks", purchaseType: "tender" };
 const PDF = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37, 0x0a]);
 const upload = (fields, files) => {
   const form = new FormData();
@@ -348,4 +348,21 @@ test("files are refused on anything but an IT supply request", async () => {
   const res = await handleContact(upload(valid, [new File([PDF], "list.pdf")]), env);
   assert.equal(res.status, 422);
   assert.match((await res.json()).fields.files, /only for IT equipment/);
+});
+
+test("delivery is a known state plus a city, shown as one place", () => {
+  assert.equal(validate(supply).data.location, "Wuse 2, FCT (Abuja)");
+  assert.equal(validate({ ...supply, location: "" }).data.location, "FCT (Abuja)");
+  assert.equal(validate({ ...supply, deliveryState: "Atlantis" }).data.location, "Wuse 2");
+});
+
+test("needed by is a fixed choice or a real date from today on", () => {
+  assert.equal(validate(supply).data.neededBy, "Within 2 weeks");
+  assert.equal(validate({ ...supply, neededBy: "yesterday" }).data.neededBy, "");
+  const now = new Date("2026-11-18T10:00:00Z");
+  assert.equal(neededByDate("2026-12-15", now), "15 Dec 2026");
+  assert.equal(neededByDate("2026-11-18", now), "18 Nov 2026");
+  assert.equal(neededByDate("2026-11-17", now), "");
+  assert.equal(neededByDate("2026-02-30", now), "");
+  assert.equal(neededByDate("15/12/2026", now), "");
 });
