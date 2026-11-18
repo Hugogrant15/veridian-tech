@@ -82,7 +82,7 @@ test("the receipt goes to the visitor, replies to the office, and repeats nothin
 });
 
 test("quote requests get quote wording", async () => {
-  await handleContact(post({ service: "it-supply", name: "Ada Obi", email: "ada@example.test", message: "40 office laptops for Abuja." }), env);
+  await handleContact(post({ service: "it-supply", name: "Ada Obi", email: "ada@example.test", supplyItems: { "bulk-laptops": "40" } }), env);
   assert.equal(calls[1].msg.Subject, "We've received your quote request");
 });
 
@@ -277,4 +277,75 @@ test("the receipt names the chosen service and reply method from the fixed lists
 test("WhatsApp links use the international form of Nigerian numbers", () => {
   assert.equal(whatsappNumber("0806 504 1081"), "2348065041081");
   assert.equal(whatsappNumber("+234 806 504 1081"), "2348065041081");
+});
+
+// ---------- IT supply quote requests with attachments ----------
+
+const supply = { service: "it-supply", name: "Ada Obi", business: "Acme Ltd", email: "ada@example.test", supplyItems: { "bulk-laptops": "40", cctv: "8", networking: "", nonsense: "5" }, location: "Abuja, FCT", neededBy: "within 4 weeks", purchaseType: "tender" };
+const PDF = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37, 0x0a]);
+const upload = (fields, files) => {
+  const form = new FormData();
+  form.set("payload", JSON.stringify(fields));
+  for (const f of files) form.append("files", f);
+  return new Request("https://site.test/api/contact", { method: "POST", body: form });
+};
+
+test("supply requests keep known items with quantities and drop the rest", () => {
+  const { data, errors } = validate(supply);
+  assert.deepEqual(errors, {});
+  assert.deepEqual(data.supplyItems, [{ id: "bulk-laptops", qty: 40 }, { id: "cctv", qty: 8 }, { id: "networking", qty: 0 }]);
+  assert.equal(data.purchaseType, "tender");
+});
+
+test("a supply request needs ticked items or an attached list, but no message", () => {
+  assert.ok(validate({ ...supply, supplyItems: {} }).errors.supplyItems);
+  assert.deepEqual(validate({ ...supply, supplyItems: {} }, { hasFiles: true }).errors, {});
+});
+
+test("the supply office email lists what they need, delivery, the tender flag and the files", async () => {
+  const res = await handleContact(upload(supply, [new File([PDF], "Our BOQ <final>.pdf", { type: "application/pdf" })]), env);
+  assert.equal(res.status, 200);
+  const office = calls[0].msg;
+  assert.equal(office.Subject, "Quote request: IT equipment, from Acme Ltd");
+  assert.match(office.TextPart, /Needs: Laptops in bulk × 40 laptops · CCTV × 8 cameras · Networking and Wi-Fi/);
+  assert.match(office.HTMLPart, /Tender or bid/);
+  assert.equal(office.Attachments.length, 1);
+  assert.equal(office.Attachments[0].Filename, "Our BOQ _final_.pdf");
+  assert.equal(office.Attachments[0].ContentType, "application/pdf");
+  assert.equal(atob(office.Attachments[0].Base64Content).slice(0, 4), "%PDF");
+});
+
+test("attachments never go to the visitor's acknowledgement", async () => {
+  await handleContact(upload(supply, [new File([PDF], "list.pdf")]), env);
+  assert.equal(calls[1].msg.Attachments, undefined);
+});
+
+test("a renamed program is rejected, whatever its name", async () => {
+  const exe = new Uint8Array([0x4d, 0x5a, 0x90, 0x00]);
+  const res = await handleContact(upload(supply, [new File([exe], "invoice.pdf")]), env);
+  assert.equal(res.status, 422);
+  assert.match((await res.json()).fields.files, /not a real PDF/);
+  assert.equal(calls.length, 0);
+});
+
+test("only the allowed file types, at most three files, within the size limits", async () => {
+  const tooMany = await handleContact(upload(supply, [1, 2, 3, 4].map((i) => new File([PDF], `${i}.pdf`))), env);
+  assert.match((await tooMany.json()).fields.files, /up to 3 files/);
+  const wrongType = await handleContact(upload(supply, [new File(["x"], "run.exe")]), env);
+  assert.match((await wrongType.json()).fields.files, /PDF, Excel, Word, CSV, JPG or PNG/);
+  const big = new Uint8Array(8 * 1024 * 1024 + 1);
+  big.set(PDF);
+  const tooBig = await handleContact(upload(supply, [new File([big], "big.pdf")]), env);
+  assert.match((await tooBig.json()).fields.files, /8 MB or smaller/);
+  const six = new Uint8Array(6 * 1024 * 1024);
+  six.set(PDF);
+  const tooMuch = await handleContact(upload(supply, [new File([six], "a.pdf"), new File([six], "b.pdf")]), env);
+  assert.match((await tooMuch.json()).fields.files, /10 MB or less/);
+  assert.equal(calls.length, 0);
+});
+
+test("files are refused on anything but an IT supply request", async () => {
+  const res = await handleContact(upload(valid, [new File([PDF], "list.pdf")]), env);
+  assert.equal(res.status, 422);
+  assert.match((await res.json()).fields.files, /only for IT equipment/);
 });

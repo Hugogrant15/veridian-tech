@@ -5,6 +5,8 @@ import { COMPANY } from "../config/company";
 import { BRANDS, PURCHASE_TYPES, STAFF_PROFILES, SUPPLY_SERVICES, type StaffProfile } from "../config/supply";
 import { PageHeader } from "../components/PageHeader";
 import { Accent, Seo, WhatsAppGlyph } from "../components/ui";
+import { FileDrop } from "../components/FileDrop";
+import OPTIONS from "../config/enquiry-options.json";
 
 const OPERATING_SYSTEMS = ["No preference", "Windows 11 Pro", "Windows 11 Home", "macOS", "Linux"] as const;
 /** Other supply services the buyer can add to the same request. */
@@ -19,7 +21,10 @@ interface Group {
 }
 
 type Status = "idle" | "sending" | "sent" | "failed";
-type FieldErrors = Partial<Record<"name" | "email" | "phone" | "message", string>>;
+type FieldErrors = Partial<Record<"name" | "email" | "phone" | "message" | "files" | "supplyItems", string>>;
+
+/** The purchase type label shown here → the option id the Worker knows. */
+const purchaseId = (label: string) => OPTIONS.purchaseTypes.find((p) => p.label === label)?.id ?? "";
 
 const profileOf = (id: string): StaffProfile | undefined => STAFF_PROFILES.find((p) => p.id === id);
 const FIRST_PROFILE = STAFF_PROFILES[0]?.id ?? "";
@@ -45,6 +50,7 @@ export default function OrderBuilder() {
   const [note, setNote] = useState("");
   const [contact, setContact] = useState({ name: "", business: "", email: "", phone: "" });
   const [fax, setFax] = useState(""); // honeypot
+  const [files, setFiles] = useState<File[]>([]);
   const [status, setStatus] = useState<Status>("idle");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [copied, setCopied] = useState(false);
@@ -98,11 +104,28 @@ export default function OrderBuilder() {
     setStatus("sending");
     setErrors({});
     try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ service: "it-supply", ...contact, message: specText(), fax }),
+      // The laptops and any add-ons as structured items, so the office email lists them;
+      // the full specification travels as the message.
+      const supplyItems: Record<string, string> = { "bulk-laptops": String(total) };
+      for (const id of addOns) supplyItems[id] = "";
+      const payload = JSON.stringify({
+        service: "it-supply",
+        ...contact,
+        supplyItems,
+        location,
+        neededBy,
+        purchaseType: purchaseId(purchaseType),
+        message: specText(),
+        fax,
       });
+      let init: RequestInit = { method: "POST", headers: { "content-type": "application/json" }, body: payload };
+      if (files.length) {
+        const form = new FormData();
+        form.set("payload", payload);
+        for (const file of files) form.append("files", file);
+        init = { method: "POST", body: form };
+      }
+      const res = await fetch("/api/contact", init);
       const body = (await res.json().catch(() => ({}))) as { sandbox?: boolean; fields?: FieldErrors };
       // In production a sandboxed send is not delivered, so never claim success for it.
       if (res.ok && (!body.sandbox || import.meta.env.DEV)) {
@@ -275,6 +298,19 @@ export default function OrderBuilder() {
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 className={`${inputClass} resize-none`}
+              />
+            </div>
+            <div className="mt-5">
+              <p className={labelClass}>
+                Attach your own list, BOQ or RFQ <span className="font-normal text-muted">(optional)</span>
+              </p>
+              <FileDrop
+                files={files}
+                error={errors.files}
+                onChange={(next, problem) => {
+                  setFiles(next);
+                  setErrors((prev) => ({ ...prev, files: problem || undefined }));
+                }}
               />
             </div>
           </fieldset>

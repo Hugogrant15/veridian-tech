@@ -4,12 +4,18 @@ import type { LucideIcon } from "lucide-react";
 import {
   AlertCircle,
   Briefcase,
+  Cctv,
   Check,
   CheckCircle,
   Globe,
   Handshake,
   HelpCircle,
+  Laptop,
   MessagesSquare,
+  MonitorSmartphone,
+  Network,
+  Plus,
+  Printer,
   RefreshCw,
   Search,
   ShoppingBag,
@@ -19,10 +25,12 @@ import {
 import OPTIONS from "../config/enquiry-options.json";
 import { COMPANY, PRIMARY_PHONE, WHATSAPP_URL } from "../config/company";
 import { ArrowIcon, WhatsAppGlyph } from "./ui";
+import { FileDrop } from "./FileDrop";
 
 // Short, branching form built to convert. One choice on step 1; tapping it moves straight on.
-// Build work: what → timing/budget → details (3 steps). Consultation, partnership, careers or a
-// general question skip timing/budget (2 steps). Option ids are shared with the Worker.
+// Build work: what → timing/budget → details (3 steps). IT equipment: what → which items →
+// delivery → details with an optional file upload (4 steps). Consultation, partnership, careers
+// or a general question go straight to details (2 steps). Option ids are shared with the Worker.
 
 const ICONS: Record<string, LucideIcon> = {
   websites: Globe,
@@ -35,6 +43,16 @@ const ICONS: Record<string, LucideIcon> = {
   partnership: Handshake,
   careers: Briefcase,
   general: HelpCircle,
+  "it-supply": Laptop,
+};
+
+const SUPPLY_ICONS: Record<string, LucideIcon> = {
+  "bulk-laptops": Laptop,
+  "workspace-setup": MonitorSmartphone,
+  networking: Network,
+  cctv: Cctv,
+  printers: Printer,
+  other: Plus,
 };
 
 const CONTACT_PREFS = [
@@ -48,9 +66,10 @@ const OTHER_OPTIONS = OPTIONS.services.filter((s) => s.group === "other");
 const BUILD_IDS = new Set(BUILD_OPTIONS.map((s) => s.id));
 const SERVICE_IDS = new Set(OPTIONS.services.map((s) => s.id));
 
-type Step = 1 | 2 | 3;
+/** 1 what · 2 timing and budget · 3 details · 4 IT items · 5 delivery. The order per path is in `steps`. */
+type Step = 1 | 2 | 3 | 4 | 5;
 type Status = "idle" | "sending" | "sent" | "failed";
-type Field = "service" | "name" | "business" | "email" | "phone" | "siteUrl" | "role" | "profileUrl" | "message";
+type Field = "service" | "name" | "business" | "email" | "phone" | "siteUrl" | "role" | "profileUrl" | "message" | "supplyItems" | "files" | "location" | "neededBy";
 type FieldErrors = Partial<Record<Field, string>>;
 
 interface Draft {
@@ -66,6 +85,11 @@ interface Draft {
   role: string;
   profileUrl: string;
   message: string;
+  /** IT supply: ticked item id → quantity as typed ("" when none). */
+  supplyItems: Record<string, string>;
+  location: string;
+  neededBy: string;
+  purchaseType: string;
 }
 
 const EMPTY: Draft = {
@@ -81,6 +105,10 @@ const EMPTY: Draft = {
   role: "",
   profileUrl: "",
   message: "",
+  supplyItems: {},
+  location: "",
+  neededBy: "",
+  purchaseType: "",
 };
 
 // v2: one service instead of a list. A new key so drafts saved by the old form are ignored.
@@ -108,20 +136,22 @@ function initialDraft(): Draft {
 /** What the visitor chose, in words that fit the kind of enquiry. */
 function copyFor(service: string) {
   const build = BUILD_IDS.has(service);
+  const supply = service === "it-supply";
   const careers = service === "careers";
   const partnership = service === "partnership";
   let messageLabel = "Anything else we should know?";
   if (careers) messageLabel = "Introduce yourself";
   else if (partnership) messageLabel = "Tell us about the partnership";
-  else if (!build) messageLabel = "What would you like to discuss?";
+  else if (!build && !supply) messageLabel = "What would you like to discuss?";
   return {
     build,
+    supply,
     careers,
     partnership,
     messageLabel,
-    messageRequired: !build,
+    messageRequired: !build && !supply,
     // One choice only, so build visitors are prompted to mention any extra needs here.
-    messagePlaceholder: build ? "e.g. you also need SEO, a mobile app or hosting" : "",
+    messagePlaceholder: build ? "e.g. you also need SEO, a mobile app or hosting" : supply ? "e.g. brands, specifications, accessories" : "",
     detailsTitle: careers ? "Tell us about yourself" : "Where should we reply?",
   };
 }
@@ -138,6 +168,15 @@ function whatsappText(d: Draft): string {
   ];
   if (c.build && d.timeline) lines.push(`Timing: ${labelOf(OPTIONS.timelines, d.timeline)}`);
   if (c.build && d.budget) lines.push(`Budget: ${labelOf(OPTIONS.budgets, d.budget)}`);
+  if (c.supply) {
+    const needs = OPTIONS.supplyItems
+      .filter((i) => i.id in d.supplyItems)
+      .map((i) => (d.supplyItems[i.id] ? `${i.label} × ${d.supplyItems[i.id]}` : i.label));
+    if (needs.length) lines.push(`Needs: ${needs.join(", ")}`);
+    if (d.location) lines.push(`Delivery: ${d.location}`);
+    if (d.neededBy) lines.push(`Needed by: ${d.neededBy}`);
+    if (d.purchaseType) lines.push(`Purchase: ${labelOf(OPTIONS.purchaseTypes, d.purchaseType)}`);
+  }
   if (c.careers && d.role) lines.push(`Role or skills: ${d.role}`);
   if (c.careers && d.profileUrl) lines.push(`LinkedIn or portfolio: ${d.profileUrl}`);
   if (d.siteUrl) lines.push(`Current website: ${d.siteUrl}`);
@@ -216,6 +255,8 @@ function Form({ initial }: { initial: Draft }) {
   const [status, setStatus] = useState<Status>("idle");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [fax, setFax] = useState(""); // honeypot
+  // Files can't be kept in the session draft, so they live here only.
+  const [files, setFiles] = useState<File[]>([]);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const firstRender = useRef(true);
@@ -251,9 +292,9 @@ function Form({ initial }: { initial: Draft }) {
   }, [step, status]);
 
   const c = copyFor(draft.service);
-  // Build work has a timing/budget step; everything else goes straight to details.
-  // Before a choice, show the longer path: it is what most visitors take.
-  const steps: Step[] = c.build || !draft.service ? [1, 2, 3] : [1, 3];
+  // Build work has a timing/budget step; IT equipment has items and delivery; everything else
+  // goes straight to details. Before a choice, show the build path: it is what most visitors take.
+  const steps: Step[] = c.supply ? [1, 4, 5, 3] : c.build || !draft.service ? [1, 2, 3] : [1, 3];
   const position = steps.indexOf(step) + 1;
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft((d) => ({ ...d, [key]: value }));
@@ -274,7 +315,7 @@ function Form({ initial }: { initial: Draft }) {
   const waLink = `${WHATSAPP_URL}?text=${encodeURIComponent(whatsappText(draft))}`;
 
   // The step after "what": timing/budget for build work, otherwise straight to details.
-  const stepAfterChoice = (service: string): Step => (BUILD_IDS.has(service) ? 2 : 3);
+  const stepAfterChoice = (service: string): Step => (BUILD_IDS.has(service) ? 2 : service === "it-supply" ? 4 : 3);
 
   const choose = (id: string) => {
     set("service", id);
@@ -285,7 +326,7 @@ function Form({ initial }: { initial: Draft }) {
     advanceTimer.current = window.setTimeout(() => setStep(stepAfterChoice(id)), ADVANCE_DELAY_MS);
   };
 
-  const goBack = () => setStep((s) => (s === 3 && c.build ? 2 : 1));
+  const goBack = () => setStep((s) => steps[steps.indexOf(s) - 1] ?? 1);
 
   const next = () => {
     if (step === 1) {
@@ -298,8 +339,16 @@ function Form({ initial }: { initial: Draft }) {
       return;
     }
     setErrors({});
-    setStep(3);
+    setStep(steps[steps.indexOf(step) + 1] ?? 3);
   };
+
+  const toggleItem = (id: string) =>
+    setDraft((d) => ({
+      ...d,
+      supplyItems: id in d.supplyItems ? Object.fromEntries(Object.entries(d.supplyItems).filter(([key]) => key !== id)) : { ...d.supplyItems, [id]: "" },
+    }));
+  const setQty = (id: string, value: string) =>
+    setDraft((d) => ({ ...d, supplyItems: { ...d.supplyItems, [id]: value.replace(/\D/g, "").slice(0, 6) } }));
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -312,6 +361,8 @@ function Form({ initial }: { initial: Draft }) {
     if (!draft.email.trim() && !draft.phone.trim()) local.email = "Give us an email address or a phone number.";
     if (c.careers && draft.role.trim().length < 2) local.role = "Tell us the role or skills you're interested in.";
     if (c.messageRequired && draft.message.trim().length < 10) local.message = "Please write a few words so we know how to help.";
+    if (c.supply && Object.keys(draft.supplyItems).length === 0 && files.length === 0)
+      local.files = "Tick what you need on the earlier step, or attach your list here.";
     if (Object.keys(local).length) {
       setErrors(local);
       return;
@@ -319,19 +370,28 @@ function Form({ initial }: { initial: Draft }) {
     setErrors({});
     setStatus("sending");
     try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          ...draft,
-          timeline: c.build ? draft.timeline : "",
-          budget: c.build ? draft.budget : "",
-          siteUrl: needsUrl ? draft.siteUrl : "",
-          role: c.careers ? draft.role : "",
-          profileUrl: c.careers ? draft.profileUrl : "",
-          fax,
-        }),
+      const payload = JSON.stringify({
+        ...draft,
+        timeline: c.build ? draft.timeline : "",
+        budget: c.build ? draft.budget : "",
+        siteUrl: needsUrl ? draft.siteUrl : "",
+        role: c.careers ? draft.role : "",
+        profileUrl: c.careers ? draft.profileUrl : "",
+        supplyItems: c.supply ? draft.supplyItems : {},
+        location: c.supply ? draft.location : "",
+        neededBy: c.supply ? draft.neededBy : "",
+        purchaseType: c.supply ? draft.purchaseType : "",
+        fax,
       });
+      // With files, the same fields travel as "payload" in a multipart form.
+      let init: RequestInit = { method: "POST", headers: { "content-type": "application/json" }, body: payload };
+      if (c.supply && files.length) {
+        const form = new FormData();
+        form.set("payload", payload);
+        for (const file of files) form.append("files", file);
+        init = { method: "POST", body: form };
+      }
+      const res = await fetch("/api/contact", init);
       const body = (await res.json().catch(() => ({}))) as { sandbox?: boolean; fields?: FieldErrors };
       // In production a sandboxed send is not delivered, so never claim success for it.
       if (res.ok && (!body.sandbox || import.meta.env.DEV)) {
@@ -347,6 +407,7 @@ function Form({ initial }: { initial: Draft }) {
         setErrors(body.fields);
         setStatus("idle");
         if (body.fields.service) setStep(1);
+        else if (body.fields.supplyItems) setStep(4);
         return;
       }
       setStatus("failed");
@@ -427,6 +488,8 @@ function Form({ initial }: { initial: Draft }) {
     1: "How can we help?",
     2: "When, and roughly what budget?",
     3: c.detailsTitle,
+    4: "What do you need?",
+    5: "Delivery and timing",
   };
 
   const tiles = (list: typeof OPTIONS.services) => (
@@ -522,6 +585,80 @@ function Form({ initial }: { initial: Draft }) {
             </div>
           )}
 
+          {step === 4 && (
+            <div className="flex flex-col gap-5">
+              <p className="-mt-3 text-sm text-muted">Tick all that apply. Quantities help us quote faster, but they&apos;re optional.</p>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {OPTIONS.supplyItems.map((item) => {
+                  const Icon = SUPPLY_ICONS[item.id] ?? Plus;
+                  const checked = item.id in draft.supplyItems;
+                  return (
+                    <div key={item.id} className="flex flex-col gap-2">
+                      <ChoiceTile type="checkbox" name="supplyItems" checked={checked} onChange={() => toggleItem(item.id)}>
+                        <span className="flex flex-col items-start gap-2.5 pr-4">
+                          <Icon size={22} strokeWidth={1.6} className="text-emerald-deep" aria-hidden="true" />
+                          <span className="text-[15px] leading-snug font-medium text-ink">{item.label}</span>
+                        </span>
+                      </ChoiceTile>
+                      {checked && item.qtyLabel && (
+                        <label className="flex items-center gap-2 text-sm text-muted">
+                          <span className="whitespace-nowrap">{item.qtyLabel}:</span>
+                          <input
+                            inputMode="numeric"
+                            value={draft.supplyItems[item.id] ?? ""}
+                            onChange={(e) => setQty(item.id, e.target.value)}
+                            placeholder="e.g. 20"
+                            aria-label={`${item.label}: ${item.qtyLabel.toLowerCase()}`}
+                            className="w-full min-w-0 rounded-md border border-line bg-white px-3 py-2 text-ink focus:border-emerald focus:outline-none"
+                          />
+                        </label>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <FieldError message={errors.supplyItems} />
+              <p className="text-sm text-muted">
+                Laptops for different kinds of staff?{" "}
+                <Link to="/it-supply/build-your-order" className="font-semibold text-emerald-deep underline">
+                  Use the order builder
+                </Link>{" "}
+                for a specification per group. Or attach your own list on the last step.
+              </p>
+            </div>
+          )}
+
+          {step === 5 && (
+            <div className="flex flex-col gap-5">
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="location" className={labelClass}>
+                    Delivery location {optional}
+                  </label>
+                  <input id="location" name="location" maxLength={120} placeholder="City and state" value={draft.location} onChange={onInput} className={inputClass} />
+                  <FieldError message={errors.location} />
+                </div>
+                <div>
+                  <label htmlFor="neededBy" className={labelClass}>
+                    Needed by {optional}
+                  </label>
+                  <input id="neededBy" name="neededBy" maxLength={80} placeholder="A date, or e.g. within 4 weeks" value={draft.neededBy} onChange={onInput} className={inputClass} />
+                  <FieldError message={errors.neededBy} />
+                </div>
+              </div>
+              <fieldset>
+                <legend className={labelClass}>Type of purchase {optional}</legend>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {OPTIONS.purchaseTypes.map((p) => (
+                    <ChoiceTile key={p.id} type="radio" name="purchaseType" compact checked={draft.purchaseType === p.id} onChange={() => set("purchaseType", p.id)}>
+                      <span className="font-medium text-ink">{p.label}</span>
+                    </ChoiceTile>
+                  ))}
+                </div>
+              </fieldset>
+            </div>
+          )}
+
           {step === 3 && (
             <div className="flex flex-col gap-5">
               <div className="grid gap-5 sm:grid-cols-2">
@@ -610,6 +747,19 @@ function Form({ initial }: { initial: Draft }) {
                 />
                 <FieldError message={errors.message} />
               </div>
+              {c.supply && (
+                <div>
+                  <p className={labelClass}>Upload your list, BOQ or RFQ {optional}</p>
+                  <FileDrop
+                    files={files}
+                    error={errors.files}
+                    onChange={(next, problem) => {
+                      setFiles(next);
+                      setErrors((prev) => ({ ...prev, files: problem || undefined }));
+                    }}
+                  />
+                </div>
+              )}
               {/* Honeypot: hidden from people, filled in by bots. */}
               <div className="hidden" aria-hidden="true">
                 <label htmlFor="fax">Fax</label>
@@ -631,7 +781,7 @@ function Form({ initial }: { initial: Draft }) {
         {(step !== 1 || draft.service) && (
           <button type="submit" disabled={status === "sending"} className="btn mt-8 w-full disabled:cursor-wait disabled:opacity-70">
             <span className="btn-label">
-              <span>{step < 3 ? "Continue" : status === "sending" ? "Sending…" : c.careers ? "Send introduction" : "Send"}</span>
+              <span>{step !== 3 ? "Continue" : status === "sending" ? "Sending…" : c.careers ? "Send introduction" : c.supply ? "Request a quote" : "Send"}</span>
             </span>
             <span className="btn-arrow" aria-hidden="true">
               <ArrowIcon />
