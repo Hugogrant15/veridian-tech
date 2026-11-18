@@ -26,7 +26,7 @@ const COMPANY = {
   legalName: 'Veridian Tech Innovations Ltd',
   address: ['7, Pius Drive, Fagbinle Estate,', 'Isheri Ijegun, Lagos 100266'],
   phones: '0806 504 1081  ·  0904 325 2415',
-  email: 'contact.veridiantech@gmail.com',
+  email: 'info@veridiantechinnovationsltd.com',
   website: 'veridiantechinnovationsltd.com',
   rc: '9367650',
   duns: '352292647',

@@ -1,8 +1,8 @@
 // Cloudflare Workers: serves the prerendered pages from ./dist (about.html is
 // served at /about; unknown paths get 404.html with a real 404 status) and runs
 // the Worker only for /api/*. Deploys come from Workers Builds on push to `main`.
-// Secrets (set in the dashboard, never here): BREVO_API_KEY, MAIL_FROM,
-// CONTACT_TO. BREVO_LIVE="true" switches off sandbox mode.
+// Secrets (set in the dashboard, never here): MAILJET_API_KEY, MAILJET_SECRET_KEY,
+// MAIL_FROM, CONTACT_TO. MAIL_LIVE="true" switches off sandbox mode.
 {
   "name": "veridian-tech",
   "main": "worker/index.js",
@@ -24,6 +24,12 @@
       "name": "CONTACT_LIMITER",
       "namespace_id": "5101",
       "simple": { "limit": 5, "period": 60 }
+    },
+    {
+      // One acknowledgement email per visitor address per minute (worker/contact.js).
+      "name": "RECEIPT_LIMITER",
+      "namespace_id": "5102",
+      "simple": { "limit": 1, "period": 60 }
     }
   ],
   "observability": { "enabled": true }

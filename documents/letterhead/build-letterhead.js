@@ -26,7 +26,7 @@ const COMPANY = {
   legalName: 'Veridian Tech Innovations Ltd',
   address: ['7, Pius Drive, Fagbinle Estate,', 'Isheri Ijegun, Lagos 100266'],
   phones: '0806 504 1081  ·  0904 325 2415',
-  email: 'contact.veridiantech@gmail.com',
+  email: 'info@veridiantechinnovationsltd.com',
   website: 'veridiantechinnovationsltd.com',
   rc: '9367650',
   duns: '352292647',
@@ -42,7 +42,6 @@ const SIGNATURE = fs.existsSync(SIGNATURE_FILE) ? fs.readFileSync(SIGNATURE_FILE
 
 const NIGHT = '062B1C';
 const EMERALD = '075C33';
-const GOLD = 'C9A55C';
 const INK = '0F1F17';
 const MUTED = '5B6660';
 const LINE = 'CBD5CE';
@@ -67,43 +66,65 @@ const p = (children, o = {}) => new Paragraph({
 });
 
 // ---------- header and footer ----------
+// Page 1: a large logo on the left and the company name, big and bold, on the right,
+// then the contact details spread across the full width, then a thick emerald rule.
 function firstHeader() {
-  const small = { size: 17, color: MUTED };
   const cell = (children, w, o = {}) => new TableCell({
     children, width: { size: w, type: WidthType.DXA }, verticalAlign: o.v ?? VerticalAlign.CENTER,
-    margins: { top: 0, bottom: 0, left: 0, right: 0 },
+    borders: o.borders, margins: { top: o.pt ?? 0, bottom: o.pb ?? 0, left: o.pl ?? 0, right: o.pr ?? 0 },
   });
-  const logoW = 1400;
-  const block = new Table({
-    columnWidths: [logoW, W - logoW], width: { size: W, type: WidthType.DXA }, layout: TableLayoutType.FIXED, borders: NO_BORDERS,
-    rows: [new TableRow({ children: [
-      cell([p([new ImageRun({ type: 'png', data: LOGO, transformation: { width: 84, height: 96 } })])], logoW),
-      cell([
-        p([run(COMPANY.legalName, { bold: true, size: 21 })], { after: 40 }),
-        ...COMPANY.address.map((l) => p([run(l, small)], { line: 240 })),
-        p([run('Tel: ', small), run(COMPANY.phones, { size: 17 })], { line: 240 }),
-        p([run('Email: ', small), run(COMPANY.email, { size: 17 })], { line: 240 }),
-        p([run(COMPANY.website, { size: 17, color: EMERALD, bold: true })], { line: 240 }),
-      ], W - logoW),
-    ] })],
+  const table = (rows, widths) => new Table({
+    rows, columnWidths: widths, width: { size: W, type: WidthType.DXA }, layout: TableLayoutType.FIXED, borders: NO_BORDERS,
   });
-  return new Header({ children: [block, p('', { border: { bottom: { style: BorderStyle.SINGLE, size: 18, color: GOLD, space: 1 } }, after: 0 }),
-    // Clear space between the gold rule and the first line of the letter.
-    p('', { line: 360 })] });
+
+  // Row 1: logo (about 3.2 cm tall, as supplied) and the name block.
+  const logoW = 2200;
+  const top = table([new TableRow({ children: [
+    cell([p([new ImageRun({ type: 'png', data: LOGO, transformation: { width: 106, height: 121 } })])], logoW),
+    cell([
+      p([run(COMPANY.legalName.toUpperCase(), { bold: true, size: 40, color: NIGHT, spacing: 10 })], { align: AlignmentType.RIGHT, line: 240, after: 80 }),
+      p([run(`RC ${COMPANY.rc}   ·   D-U-N-S ${COMPANY.duns}`, { bold: true, size: 20, color: EMERALD, spacing: 10 })], { align: AlignmentType.RIGHT, line: 240 }),
+    ], W - logoW),
+  ] })], [logoW, W - logoW]);
+
+  // Row 2: three columns across the page, each a bold label over its details.
+  const label = (t) => p([run(t, { bold: true, size: 16, color: EMERALD, spacing: 20 })], { line: 240, after: 40 });
+  const line = (t, o = {}) => p([run(t, { size: 20, bold: o.bold, color: o.color ?? INK })], { line: 250 });
+  const divider = { style: BorderStyle.SINGLE, size: 4, color: LINE };
+  const none = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+  // The email and website column is the widest, so neither address wraps.
+  const colW = [3200, 2050, W - 3200 - 2050];
+  const col = (children, i) => cell(children, colW[i], {
+    v: VerticalAlign.TOP, pt: 140, pb: 160, pl: i === 0 ? 0 : 200, pr: 120,
+    borders: { top: divider, bottom: none, right: none, left: i === 0 ? none : divider },
+  });
+  const contacts = table([new TableRow({ children: [
+    col([label('ADDRESS'), ...COMPANY.address.map((l) => line(l))], 0),
+    col([label('PHONE'), ...COMPANY.phones.split('  ·  ').map((n) => line(n, { bold: true }))], 1),
+    col([label('EMAIL AND WEB'), line(COMPANY.email, { bold: true }), line(COMPANY.website, { bold: true, color: EMERALD })], 2),
+  ] })], colW);
+
+  return new Header({ children: [
+    top,
+    contacts,
+    p('', { border: { bottom: { style: BorderStyle.SINGLE, size: 24, color: EMERALD, space: 1 } }, line: 120 }),
+    // Clear space between the rule and the first line of the letter.
+    p('', { line: 360 }),
+  ] });
 }
 
 const laterHeader = () => new Header({ children: [new Paragraph({
   tabStops: [{ type: TabStopType.RIGHT, position: W }],
-  border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: LINE, space: 6 } },
+  border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: EMERALD, space: 6 } },
   children: [
-    new ImageRun({ type: 'png', data: LOGO, transformation: { width: 35, height: 40 } }),
-    new TextRun({ text: `\t${COMPANY.legalName}`, font: FONT, size: 16, color: MUTED }),
+    new ImageRun({ type: 'png', data: LOGO, transformation: { width: 44, height: 50 } }),
+    new TextRun({ text: `\t${COMPANY.legalName.toUpperCase()}`, font: FONT, size: 18, bold: true, color: NIGHT }),
   ],
 })] });
 
 const footer = () => new Footer({ children: [new Paragraph({
   tabStops: [{ type: TabStopType.RIGHT, position: W }],
-  border: { top: { style: BorderStyle.SINGLE, size: 12, color: GOLD, space: 6 } },
+  border: { top: { style: BorderStyle.SINGLE, size: 12, color: EMERALD, space: 6 } },
   children: [
     new TextRun({ text: `${COMPANY.legalName}  ·  RC ${COMPANY.rc}  ·  D-U-N-S ${COMPANY.duns}  ·  ${COMPANY.website}`, font: FONT, size: 15, color: MUTED }),
     new TextRun({ children: ['\tPage ', PageNumber.CURRENT, ' of ', PageNumber.TOTAL_PAGES], font: FONT, size: 15, color: MUTED }),
@@ -182,6 +203,8 @@ async function write(file, opts) {
 }
 
 (async () => {
-  await write(path.join(ROOT, 'documents/templates/Veridian-Letterhead.docx'), { letter: false });
-  await write(path.join(ROOT, 'documents/templates/Veridian-Letter-Template.docx'), { letter: true });
+  // Optional output folder, e.g. to preview while the templates are open in Word.
+  const outDir = process.argv[2] ? path.resolve(process.argv[2]) : path.join(ROOT, 'documents/templates');
+  await write(path.join(outDir, 'Veridian-Letterhead.docx'), { letter: false });
+  await write(path.join(outDir, 'Veridian-Letter-Template.docx'), { letter: true });
 })().catch((e) => { console.error(e); process.exit(1); });

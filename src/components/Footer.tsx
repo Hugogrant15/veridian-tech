@@ -53,7 +53,7 @@ export function Footer() {
         <div>
           <h2 className={headingClass}>Company</h2>
           <ul className="space-y-3">
-            {NAV_LINKS.filter((l) => l.to !== "/services").map((l) => (
+            {NAV_LINKS.map((l) => (
               <li key={l.to}>
                 <Link to={l.to} className={linkClass}>
                   {l.name}

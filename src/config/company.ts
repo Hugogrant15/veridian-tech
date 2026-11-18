@@ -35,9 +35,9 @@ export const COMPANY = {
   // wa.me takes the number in international form, digits only.
   whatsapp: { display: "0806 504 1081", wa: "2348065041081" },
 
-  // Company Gmail until the domain mailbox exists. veridiantech.com belongs to
-  // someone else: never put an address on it here.
-  email: "contact.veridiantech@gmail.com",
+  // Forwarded to the company Gmail by Cloudflare Email Routing. veridiantech.com
+  // belongs to someone else: never put an address on it here.
+  email: "info@veridiantechinnovationsltd.com",
 } as const;
 
 export const WHATSAPP_URL = `https://wa.me/${COMPANY.whatsapp.wa}`;

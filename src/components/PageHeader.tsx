@@ -13,13 +13,16 @@ interface PageHeaderProps {
   visual?: ReactNode;
 }
 
-/** Top of every inner page, with one H1. */
+/**
+ * Top of every inner page, with one H1. The top padding leaves room for the
+ * floating navigation bar, which sits over this section (Navbar.tsx).
+ */
 export function PageHeader({ eyebrow, title, sub, compact = false, tone = "light", visual }: PageHeaderProps) {
   if (tone === "dark") {
     return (
       <section className="relative overflow-hidden border-b border-gold/30 bg-night text-pearl">
         <div aria-hidden="true" className="grain grain-dark absolute inset-0" />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 py-16 sm:px-8 lg:min-h-[560px] lg:grid-cols-[1fr_1fr] lg:px-10 lg:py-20">
+        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 pt-28 pb-16 sm:px-8 lg:min-h-[600px] lg:grid-cols-[1fr_1fr] lg:px-10 lg:pt-36 lg:pb-20">
           <div className="rise relative z-10 lg:max-w-[540px]">
             <SectionHeading as="h1" tone="dark" eyebrow={eyebrow} title={title} sub={sub} />
           </div>
@@ -35,7 +38,7 @@ export function PageHeader({ eyebrow, title, sub, compact = false, tone = "light
       <div aria-hidden="true" className="grain grain-light absolute inset-0" />
       <div
         className={`rise relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-10 ${
-          compact ? "pt-10 pb-8 lg:pt-12 lg:pb-10" : "pt-16 pb-14 lg:pt-20 lg:pb-16"
+          compact ? "pt-28 pb-8 lg:pt-32 lg:pb-10" : "pt-32 pb-14 lg:pt-40 lg:pb-16"
         }`}
       >
         <SectionHeading as="h1" eyebrow={eyebrow} title={title} sub={sub} />
