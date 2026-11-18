@@ -1,8 +1,9 @@
 // Cloudflare Workers: serves the prerendered pages from ./dist (about.html is
 // served at /about; unknown paths get 404.html with a real 404 status) and runs
 // the Worker only for /api/*. Deploys come from Workers Builds on push to `main`.
-// Secrets (set in the dashboard, never here): MAILJET_API_KEY, MAILJET_SECRET_KEY,
-// MAIL_FROM, CONTACT_TO. MAIL_LIVE="true" switches off sandbox mode.
+// Secrets (set in the dashboard as type "Secret", never here): MAILJET_API_KEY,
+// MAILJET_SECRET_KEY, and MAIL_LIVE="true" to switch off sandbox mode.
+// The two addresses below are public, so they live here and every deploy carries them.
 {
   "name": "veridian-tech",
   "main": "worker/index.js",
@@ -32,5 +33,10 @@
       "simple": { "limit": 1, "period": 60 }
     }
   ],
+  "vars": {
+    "MAIL_FROM": "noreply@veridiantechinnovationsltd.com",
+    // Cloudflare Email Routing forwards info@ to the company Gmail.
+    "CONTACT_TO": "info@veridiantechinnovationsltd.com"
+  },
   "observability": { "enabled": true }
 }
