@@ -6,7 +6,8 @@ window.VERIDIAN_WEBSITE = "veridiantechinnovationsltd.com";
 window.addEventListener("DOMContentLoaded", () => {
   const site = window.VERIDIAN_WEBSITE;
   document.querySelectorAll("[data-website]").forEach((el) => {
-    if (site) el.textContent = site;
+    // data-path adds a page, e.g. data-path="/it-supply".
+    if (site) el.textContent = site + (el.dataset.path || "");
     else el.remove();
   });
   document.querySelectorAll("[data-website-sep]").forEach((el) => {

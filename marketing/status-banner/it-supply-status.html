@@ -1,0 +1,134 @@
+<!doctype html>
+<!--
+  IT supply banner, the partner of services-status.html (same look).
+  ?size=status (1080x1920, default) or ?size=feed (1080x1350).
+  Claims rule (owner): no past projects, no authorised-partner status, no warranty
+  terms. Say "IT supply and setup", never "procurement" (that is a separate company).
+  Render both PNGs with render.cjs (same folder).
+  Keep key content between y=200 and y=1740: WhatsApp draws its own UI over
+  the top and bottom of a status.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Veridian IT supply banner</title>
+<style>
+@font-face { font-family: "Inter Tight"; src: url(fonts/InterTight-variable.woff2) format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "Instrument Serif"; src: url(fonts/InstrumentSerif-400-italic.woff2) format("woff2"); font-style: italic; font-weight: 400; }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { width: 1080px; height: 1920px; overflow: hidden; background: #F5F7F2; font-family: "Inter Tight", sans-serif; color: #0F1F17; }
+.serif { font-family: "Instrument Serif", Georgia, serif; font-style: italic; font-weight: 400; }
+.canvas { position: relative; width: 1080px; height: 1920px; overflow: hidden; }
+.grain { position: absolute; inset: 0; background: url(grain.png); background-size: 180px; opacity: .5; pointer-events: none; }
+
+.top { position: relative; height: 740px; padding: 170px 80px 0; }
+.glow { position: absolute; right: -260px; top: 40px; width: 900px; height: 900px; border-radius: 50%; background: radial-gradient(closest-side, rgba(17,161,89,.22), rgba(17,161,89,.07) 55%, rgba(201,165,92,.07) 75%, rgba(245,247,242,0)); }
+.logo { position: relative; height: 132px; display: block; }
+.eyebrow { position: relative; display: flex; align-items: center; gap: 18px; margin-top: 46px; font-size: 25px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: #5B6660; }
+.eyebrow i { width: 56px; height: 2px; background: linear-gradient(90deg, #C9A55C, #E4C77E); }
+h1 { position: relative; margin: 20px 0 0; font-weight: 300; font-size: 84px; line-height: 1.02; letter-spacing: -.035em; }
+h1 .serif { display: inline-block; font-size: 104px; letter-spacing: -.01em; padding: 0 10px 8px 0; background: linear-gradient(100deg, #075C33, #11A159 55%, #0B7A43); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.circuit { position: absolute; right: -60px; top: 70px; width: 340px; height: 340px; }
+
+.panel { position: absolute; left: 0; right: 0; top: 712px; bottom: 0; padding: 60px 80px 0; background: #062B1C; color: #F5F7F2; border-radius: 56px 56px 0 0; overflow: hidden; }
+.panel::before { content: ""; position: absolute; left: 80px; right: 80px; top: 0; height: 2px; background: linear-gradient(90deg, rgba(201,165,92,0), #E4C77E, rgba(201,165,92,0)); }
+.panel .glow2 { position: absolute; left: -300px; top: -260px; width: 900px; height: 900px; border-radius: 50%; background: radial-gradient(closest-side, rgba(17,161,89,.30), rgba(17,161,89,.08) 60%, rgba(6,43,28,0)); }
+.panel .glow3 { position: absolute; right: -260px; bottom: -200px; width: 760px; height: 760px; border-radius: 50%; background: radial-gradient(closest-side, rgba(201,165,92,.16), rgba(201,165,92,.04) 60%, rgba(6,43,28,0)); }
+.panel .eyebrow { margin-top: 0; color: #E4C77E; }
+.list { position: relative; list-style: none; margin: 20px 0 0; padding: 0; }
+.list li { display: grid; grid-template-columns: 92px 1fr; align-items: baseline; padding: 12px 0; border-bottom: 1px solid rgba(201,165,92,.18); }
+.list li:last-child { border-bottom: 0; }
+.num { font-size: 46px; color: #C9A55C; }
+.t { font-size: 39px; font-weight: 500; letter-spacing: -.015em; line-height: 1.15; }
+.d { margin-top: 4px; font-size: 26px; line-height: 1.4; color: #A9C2B4; }
+
+.cta { position: relative; margin-top: 24px; display: flex; align-items: center; gap: 28px; padding: 20px 30px; border-radius: 18px; background: linear-gradient(120deg, rgba(201,165,92,.20), rgba(201,165,92,.06)); border: 1px solid rgba(228,199,126,.55); }
+.wa { flex: none; width: 92px; height: 92px; border-radius: 50%; background: #25D366; display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 12px 30px -10px rgba(37,211,102,.6); }
+.cta .l1 { font-size: 26px; color: #E4C77E; font-weight: 600; letter-spacing: .04em; }
+.cta .l2 { font-size: 54px; font-weight: 600; letter-spacing: -.01em; line-height: 1.05; margin-top: 4px; }
+.cta .l3 { font-size: 25px; font-weight: 500; color: #F5F7F2; margin-top: 2px; letter-spacing: .01em; }
+.who { position: relative; margin-top: 22px; font-size: 25px; line-height: 1.4; color: #E4C77E; font-weight: 500; }
+.foot { position: relative; margin-top: 18px; font-size: 22px; color: #A9C2B4; letter-spacing: .02em; }
+/* ---------- Feed size: 1080x1350 ---------- */
+body.feed, .feed .canvas { height: 1350px; }
+.feed .top { height: 500px; padding: 60px 72px 0; }
+.feed .logo { height: 96px; }
+.feed .eyebrow { margin-top: 26px; font-size: 20px; }
+.feed h1 { margin-top: 12px; font-size: 62px; }
+.feed h1 .serif { font-size: 78px; }
+.feed .circuit { right: -50px; top: 30px; width: 260px; height: 260px; }
+.feed .who { margin-top: 14px; font-size: 19px; }
+.feed .panel { top: 470px; padding: 40px 72px 0; border-radius: 44px 44px 0 0; }
+.feed .panel::before { left: 72px; right: 72px; }
+.feed .list { margin-top: 10px; }
+.feed .list li { grid-template-columns: 70px 1fr; padding: 8px 0; }
+.feed .num { font-size: 34px; }
+.feed .t { font-size: 29px; }
+.feed .d { margin-top: 2px; font-size: 19px; }
+.feed .cta { margin-top: 16px; padding: 18px 24px; gap: 20px; }
+.feed .wa { width: 72px; height: 72px; }
+.feed .wa svg { width: 40px; height: 40px; }
+.feed .cta .l1 { font-size: 20px; }
+.feed .cta .l2 { font-size: 42px; }
+.feed .cta .l3 { font-size: 20px; margin-top: 4px; }
+.feed .foot { margin-top: 12px; font-size: 17px; }
+</style>
+<script src="brand.js"></script>
+<script>document.documentElement.dataset.size = new URLSearchParams(location.search).get("size") === "feed" ? "feed" : "status";</script>
+</head>
+<body>
+<script>if (document.documentElement.dataset.size === "feed") document.body.classList.add("feed");</script>
+<div class="canvas">
+  <div class="top">
+    <div class="glow"></div>
+    <svg class="circuit" viewBox="0 0 640 640" aria-hidden="true">
+      <g fill="none" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity=".9">
+        <path d="M60 120 H240 L360 240 V400" stroke="#11A159"></path>
+        <path d="M60 196 H206 L304 294 V528" stroke="#11A159"></path>
+        <path d="M128 300 L232 404 V600" stroke="#11A159"></path>
+        <path d="M604 84 H436 L384 136 V300" stroke="#414141"></path>
+        <path d="M604 160 H468 L424 204 V356 L470 402" stroke="#414141"></path>
+        <path d="M560 236 L472 324 V560" stroke="#414141"></path>
+      </g>
+      <g fill="#F5F7F2" stroke-width="11">
+        <circle cx="60" cy="120" r="19" stroke="#11A159"></circle><circle cx="360" cy="400" r="19" stroke="#11A159"></circle>
+        <circle cx="60" cy="196" r="19" stroke="#11A159"></circle><circle cx="304" cy="528" r="19" stroke="#11A159"></circle>
+        <circle cx="128" cy="300" r="19" stroke="#11A159"></circle><circle cx="232" cy="600" r="19" stroke="#11A159"></circle>
+        <circle cx="604" cy="84" r="19" stroke="#414141"></circle><circle cx="384" cy="300" r="19" stroke="#414141"></circle>
+        <circle cx="604" cy="160" r="19" stroke="#414141"></circle><circle cx="470" cy="402" r="19" stroke="#414141"></circle>
+        <circle cx="560" cy="236" r="19" stroke="#414141"></circle><circle cx="472" cy="560" r="19" stroke="#414141"></circle>
+      </g>
+      <circle cx="240" cy="120" r="9" fill="#E4C77E"></circle>
+      <circle cx="424" cy="290" r="9" fill="#E4C77E"></circle>
+    </svg>
+    <img class="logo" src="../../public/veridian-signature.png" alt="Veridian Tech Innovations Ltd">
+    <div class="eyebrow"><i></i>IT supply · Setup · Nationwide</div>
+    <h1>Equipment for your team,<br><span class="serif">delivered and set up.</span></h1>
+  </div>
+
+  <div class="panel">
+    <div class="glow2"></div><div class="glow3"></div>
+    <div class="eyebrow"><i></i>What we supply</div>
+    <ol class="list">
+      <li><span class="num serif">01</span><div><div class="t">Laptops in bulk, any brand</div><div class="d">Business, gaming, and coding and cyber security laptops.</div></div></li>
+      <li><span class="num serif">02</span><div><div class="t">Workspaces and workstations, set up</div><div class="d">Every desk ready, so your team sits down and starts working.</div></div></li>
+      <li><span class="num serif">03</span><div><div class="t">Office networks and Wi-Fi</div><div class="d">Planned around your floor, supplied and installed.</div></div></li>
+      <li><span class="num serif">04</span><div><div class="t">CCTV you can check from your phone</div><div class="d">Cameras where they matter, with live and recorded viewing.</div></div></li>
+      <li><span class="num serif">05</span><div><div class="t">Printers and scanners, connected</div><div class="d">Matched to how much you print, shared across the office.</div></div></li>
+    </ol>
+    <div class="who">For government and private-sector projects · Delivered anywhere in Nigeria</div>
+    <div class="cta">
+      <div class="wa"><svg width="52" height="52" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"></path></svg></div>
+      <div>
+        <div class="l1">Request a quote on WhatsApp</div>
+        <div class="l2">0806 504 1081</div>
+        <div class="l3">info@veridiantechinnovationsltd.com</div>
+      </div>
+    </div>
+    <div class="foot">Veridian Tech Innovations Ltd · RC 9367650<span data-website-sep> · </span><span data-website data-path="/it-supply"></span></div>
+  </div>
+  <div class="grain"></div>
+</div>
+</body>
+</html>
