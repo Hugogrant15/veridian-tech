@@ -45,10 +45,11 @@ RhemaVerse is described without naming any church or customer.
 
 `POST /api/contact` is handled by `worker/contact.js`:
 
-- **Sandbox by default.** Brevo accepts the send and delivers nothing unless `BREVO_LIVE` is exactly `true`.
-  Go live only after the sending domain passes DKIM, SPF and DMARC, then send one real test to our own inbox.
+- **Mailjet, sandbox by default.** Mailjet checks every message and delivers nothing (SandboxMode) unless `MAIL_LIVE` is exactly `true`.
+  Go live only after the sending domain passes SPF and DKIM in Mailjet, then send one real test to our own inbox.
   Never loop or load-test the live form.
-- **Only the office is emailed.** The visitor's address goes in Reply-To. Never add a visitor receipt: emailing a typed-in address makes the form an open relay.
+- **The office copy** goes to `CONTACT_TO`, with the visitor's address as Reply-To.
+- **The visitor gets a fixed acknowledgement** (`worker/receipt.js`, "we'll get back to you within 24 hours"). It must never become an open relay, so it repeats nothing the visitor typed (not even their name), goes at most once a minute to any one address (`RECEIPT_LIMITER`), is skipped for domains with no MX record, and is sent only after the office copy; a failed receipt never fails the enquiry.
 - Honeypot field (`fax`), input validation, 16 KB body cap, and a rate limit of 5 per minute per IP (`CONTACT_LIMITER`).
 - The form (`src/components/EnquiryForm.tsx`) takes **one** choice on step 1 (the Worker rejects a list); a tap or click moves straight on, while keyboard arrows only change the choice and Continue confirms. It branches on that choice. Anything in the **build** group: what → timing and budget → details (3 steps). Only **other** options (Consultation, Partnership, Careers, General question): what → details (2 steps), and the message is required. Careers also asks for a role (required) and a LinkedIn or portfolio link (optional). There is deliberately no CV upload.
   Its option lists live in `src/config/enquiry-options.json`, which the Worker imports too, so an id the form sends is always one the Worker knows.
@@ -60,12 +61,12 @@ Secrets, set in the Cloudflare dashboard (Worker → Settings → Variables and 
 
 | Name | Value |
 |---|---|
-| `BREVO_API_KEY` | Veridian's own Brevo account key |
-| `MAIL_FROM` | Sender on our authenticated domain, e.g. `noreply@<domain>` |
-| `CONTACT_TO` | The inbox that receives enquiries |
-| `BREVO_LIVE` | `true` only when going live |
+| `MAILJET_API_KEY` / `MAILJET_SECRET_KEY` | Veridian's own Mailjet account keys |
+| `MAIL_FROM` | `noreply@veridiantechinnovationsltd.com` |
+| `CONTACT_TO` | `info@veridiantechinnovationsltd.com` (Cloudflare Email Routing forwards it to the company Gmail) |
+| `MAIL_LIVE` | `true` only when going live |
 
-Until the first three are set the endpoint returns `503 not_configured`, and the form tells visitors to call instead.
+Until the first four are set the endpoint returns `503 not_configured`, and the form tells visitors to call instead.
 
 ## Deploy
 
@@ -107,7 +108,7 @@ specification sheet and sends it through `/api/contact` as the `it-supply` optio
 
 ## Quotation (Word)
 
-`documents/quotation/` builds the company quotation template. See its README. The signature,
+`documents/quotation/` builds the quotation template and `documents/letterhead/` the letterhead and letter template. See their READMEs. The signature,
 the generated files and every real quote are gitignored: this repository is public.
 
 ## Content for search (Phase 1)

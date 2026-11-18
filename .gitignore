@@ -38,5 +38,6 @@ marketing/**/*.docx
 # Quotation: the MD's signature and every generated or real quote stay off GitHub (this repo is public)
 documents/quotation/private/
 documents/quotation/node_modules/
+documents/letterhead/node_modules/
 documents/templates/
 documents/quotes/

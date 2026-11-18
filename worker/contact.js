@@ -1,12 +1,23 @@
-// POST /api/contact — validates an enquiry and emails it to the office via
-// Brevo. Two rules learned the hard way on another site:
-//  1. Sandbox by default. Brevo accepts the send and delivers nothing unless
-//     BREVO_LIVE is exactly "true". Go live only after the sending domain's
-//     DKIM, SPF and DMARC verify.
-//  2. Never email the visitor. A receipt to a typed-in address turns the form
-//     into an open relay. The office copy carries Reply-To instead.
+// POST /api/contact — validates an enquiry, emails it to the office through
+// Mailjet, and sends the visitor a short acknowledgement. Rules learned the hard
+// way on other sites:
+//  1. Sandbox by default. Mailjet checks every message and delivers nothing
+//     (SandboxMode) unless MAIL_LIVE is exactly "true". Go live only after the
+//     sending domain's SPF and DKIM verify in Mailjet.
+//  2. The acknowledgement must never become an open relay, i.e. a way to send
+//     arbitrary text to arbitrary addresses through our account. So it:
+//       - is fixed wording that repeats nothing the visitor typed, not even a name;
+//       - goes at most once a minute to any one address (RECEIPT_LIMITER), on top
+//         of the per-visitor limit (CONTACT_LIMITER);
+//       - is skipped for domains that cannot receive email (no MX record), which
+//         keeps bounces, and the account's reputation, clean;
+//       - is sent only after the office copy has gone, and never decides the
+//         response: if it fails, the enquiry still counts as received.
+//     The office copy carries the visitor's address as Reply-To.
 
 import OPTIONS from "../src/config/enquiry-options.json" with { type: "json" };
+import SITE from "../src/config/site.json" with { type: "json" };
+import { receiptFor } from "./receipt.js";
 
 const LIMITS = { name: 100, business: 120, email: 254, phone: 30, siteUrl: 200, role: 120, profileUrl: 200, message: 5000 };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -122,6 +133,63 @@ export function summarise(data) {
   return lines.join("\n");
 }
 
+const MAILJET_SEND = "https://api.mailjet.com/v3.1/send";
+
+/** Sends one message through Mailjet. Returns true when Mailjet accepted it. */
+async function mailjet(env, message, live) {
+  const res = await fetch(MAILJET_SEND, {
+    method: "POST",
+    headers: {
+      authorization: `Basic ${btoa(`${env.MAILJET_API_KEY}:${env.MAILJET_SECRET_KEY}`)}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ SandboxMode: !live, Messages: [message] }),
+  });
+  if (!res.ok) console.error("Mailjet send failed", res.status, await res.text());
+  return res.ok;
+}
+
+/** True when the address's domain publishes an MX record, i.e. can receive email. */
+export async function canReceiveMail(email) {
+  const domain = email.split("@")[1];
+  if (!domain) return false;
+  try {
+    const res = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=MX`, {
+      headers: { accept: "application/dns-json" },
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!res.ok) return false;
+    const answer = (await res.json()).Answer;
+    return Array.isArray(answer) && answer.some((a) => a.type === 15);
+  } catch {
+    return false;
+  }
+}
+
+/** The acknowledgement to the visitor. Every guard is explained at the top of this file. */
+async function sendReceipt(env, data, live) {
+  if (!data.email) return "skipped";
+  if (env.RECEIPT_LIMITER) {
+    const { success } = await env.RECEIPT_LIMITER.limit({ key: data.email });
+    if (!success) return "rate_limited";
+  }
+  if (!(await canReceiveMail(data.email))) return "no_mx";
+  const { subject, text, html } = receiptFor(data.service, `https://${SITE.domain}`);
+  const sent = await mailjet(
+    env,
+    {
+      From: { Email: env.MAIL_FROM, Name: "Veridian Tech" },
+      To: [{ Email: data.email }],
+      ReplyTo: { Email: env.CONTACT_TO, Name: "Veridian Tech" },
+      Subject: subject,
+      TextPart: text,
+      HTMLPart: html,
+    },
+    live,
+  );
+  return sent ? "sent" : "failed";
+}
+
 export async function handleContact(request, env) {
   if (request.method !== "POST") return json(405, { error: "method_not_allowed" });
   if (!(request.headers.get("content-type") || "").includes("application/json"))
@@ -150,33 +218,24 @@ export async function handleContact(request, env) {
     if (!success) return json(429, { error: "rate_limited" });
   }
 
-  if (!env.BREVO_API_KEY || !env.MAIL_FROM || !env.CONTACT_TO)
+  if (!env.MAILJET_API_KEY || !env.MAILJET_SECRET_KEY || !env.MAIL_FROM || !env.CONTACT_TO)
     return json(503, { error: "not_configured" });
 
-  const live = env.BREVO_LIVE === "true";
-  const headers = {
-    "api-key": env.BREVO_API_KEY,
-    "content-type": "application/json",
-    accept: "application/json",
-  };
-  if (!live) headers["X-Sib-Sandbox"] = "drop";
-
-  const res = await fetch("https://api.brevo.com/v3/smtp/email", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      sender: { name: "Veridian Tech website", email: env.MAIL_FROM },
-      to: [{ email: env.CONTACT_TO }],
+  const live = env.MAIL_LIVE === "true";
+  const delivered = await mailjet(
+    env,
+    {
+      From: { Email: env.MAIL_FROM, Name: "Veridian Tech website" },
+      To: [{ Email: env.CONTACT_TO }],
       // Reply-To only when the visitor gave an email; otherwise we reply by phone/WhatsApp.
-      ...(data.email ? { replyTo: { email: data.email, name: data.name } } : {}),
-      subject: subjectFor(data),
-      textContent: summarise(data),
-    }),
-  });
+      ...(data.email ? { ReplyTo: { Email: data.email, Name: data.name } } : {}),
+      Subject: subjectFor(data),
+      TextPart: summarise(data),
+    },
+    live,
+  );
+  if (!delivered) return json(502, { error: "send_failed" });
 
-  if (!res.ok) {
-    console.error("Brevo send failed", res.status, await res.text());
-    return json(502, { error: "send_failed" });
-  }
-  return json(200, { ok: true, sandbox: !live });
+  const receipt = await sendReceipt(env, data, live);
+  return json(200, { ok: true, sandbox: !live, receipt });
 }

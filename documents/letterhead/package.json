@@ -1,0 +1,11 @@
+{
+  "name": "veridian-letterhead",
+  "private": true,
+  "scripts": {
+    "build": "node build-letterhead.js"
+  },
+  "dependencies": {
+    "docx": "^9.15.3",
+    "jszip": "^3.10.2"
+  }
+}

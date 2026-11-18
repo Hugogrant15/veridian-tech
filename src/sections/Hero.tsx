@@ -22,7 +22,7 @@ export function Hero() {
     <section className="relative overflow-hidden">
       <div aria-hidden="true" className="grain grain-light absolute inset-0" />
       {/* Text is top-aligned beside the full-size art, so the buttons stay above the fold on laptops. */}
-      <div className="relative mx-auto grid max-w-7xl items-start gap-10 px-5 pt-8 pb-8 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-6 lg:px-10 lg:pt-4 lg:pb-6">
+      <div className="relative mx-auto grid max-w-7xl items-start gap-10 px-5 pt-28 pb-8 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-6 lg:px-10 lg:pt-24 lg:pb-6">
         <div className="flex flex-col gap-7 lg:pt-12">
           <div className="rise" style={{ animationDelay: "0.05s" }}>
             <Eyebrow>{COMPANY.legalName} · Lagos</Eyebrow>

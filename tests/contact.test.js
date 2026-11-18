@@ -2,7 +2,7 @@ import { test, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { handleContact, summarise, validate } from "../worker/contact.js";
 
-const env = { BREVO_API_KEY: "key", MAIL_FROM: "noreply@example.test", CONTACT_TO: "office@example.test" };
+const env = { MAILJET_API_KEY: "key", MAILJET_SECRET_KEY: "secret", MAIL_FROM: "noreply@example.test", CONTACT_TO: "office@example.test" };
 const valid = {
   service: "ecommerce",
   timeline: "1-3-months",
@@ -22,54 +22,122 @@ const post = (body, headers = {}) =>
     body: typeof body === "string" ? body : JSON.stringify(body),
   });
 
+// calls: Mailjet sends only. dns: MX lookups. hasMx decides what the MX lookup answers.
 let calls;
+let dns;
+let hasMx;
 const realFetch = globalThis.fetch;
 beforeEach(() => {
   calls = [];
+  dns = [];
+  hasMx = true;
   globalThis.fetch = async (url, init) => {
-    calls.push({ url, init, body: JSON.parse(init.body) });
-    return new Response("{}", { status: 201 });
+    if (String(url).startsWith("https://cloudflare-dns.com/")) {
+      dns.push(String(url));
+      return Response.json(hasMx ? { Status: 0, Answer: [{ type: 15, data: "10 mx.example.test." }] } : { Status: 0 });
+    }
+    const body = JSON.parse(init.body);
+    calls.push({ url, init, body, msg: body.Messages[0] });
+    return new Response("{}", { status: 200 });
   };
 });
 afterEach(() => {
   globalThis.fetch = realFetch;
 });
 
-test("sends in sandbox mode by default", async () => {
+test("sends in sandbox mode by default, office copy and receipt alike", async () => {
   const res = await handleContact(post(valid), env);
   assert.equal(res.status, 200);
-  assert.deepEqual(await res.json(), { ok: true, sandbox: true });
-  assert.equal(calls[0].init.headers["X-Sib-Sandbox"], "drop");
+  assert.deepEqual(await res.json(), { ok: true, sandbox: true, receipt: "sent" });
+  assert.equal(calls.length, 2);
+  assert.ok(calls.every((c) => c.body.SandboxMode === true));
+  assert.equal(calls[0].url, "https://api.mailjet.com/v3.1/send");
+  assert.equal(calls[0].init.headers.authorization, `Basic ${btoa("key:secret")}`);
 });
 
-test("only BREVO_LIVE=true turns sandbox off", async () => {
-  await handleContact(post(valid), { ...env, BREVO_LIVE: "TRUE" });
-  assert.equal(calls[0].init.headers["X-Sib-Sandbox"], "drop");
-  await handleContact(post(valid), { ...env, BREVO_LIVE: "true" });
-  assert.equal(calls[1].init.headers["X-Sib-Sandbox"], undefined);
+test("only MAIL_LIVE=true turns sandbox off", async () => {
+  await handleContact(post(valid), { ...env, MAIL_LIVE: "TRUE" });
+  assert.equal(calls[0].body.SandboxMode, true);
+  await handleContact(post(valid), { ...env, MAIL_LIVE: "true" });
+  assert.equal(calls[2].body.SandboxMode, false);
 });
 
-test("emails only the office, never the visitor", async () => {
+test("the office copy goes to the office, with the visitor as Reply-To", async () => {
   await handleContact(post(valid), env);
-  const { to, replyTo } = calls[0].body;
-  assert.deepEqual(to, [{ email: env.CONTACT_TO }]);
-  assert.equal(replyTo.email, valid.email);
+  const { To, ReplyTo } = calls[0].msg;
+  assert.deepEqual(To, [{ Email: env.CONTACT_TO }]);
+  assert.equal(ReplyTo.Email, valid.email);
+});
+
+test("the receipt goes to the visitor, replies to the office, and repeats nothing they typed", async () => {
+  const hostile = { ...valid, name: "Buy cheap pills at spam.example", business: "spam.example", message: "Visit spam.example now for a prize" };
+  await handleContact(post(hostile), env);
+  const receipt = calls[1].msg;
+  assert.deepEqual(receipt.To, [{ Email: valid.email }]);
+  assert.equal(receipt.ReplyTo.Email, env.CONTACT_TO);
+  assert.equal(receipt.To[0].Name, undefined);
+  for (const part of [receipt.Subject, receipt.TextPart, receipt.HTMLPart]) assert.doesNotMatch(part, /spam.example|pills|prize/);
+  assert.match(receipt.TextPart, /within 24 hours/);
+});
+
+test("quote requests get quote wording", async () => {
+  await handleContact(post({ service: "it-supply", name: "Ada Obi", email: "ada@example.test", message: "40 office laptops for Abuja." }), env);
+  assert.equal(calls[1].msg.Subject, "We've received your quote request");
+});
+
+test("no receipt without an email address", async () => {
+  const res = await handleContact(post({ ...valid, email: "" }), env);
+  assert.equal((await res.json()).receipt, "skipped");
+  assert.equal(calls.length, 1);
+  assert.equal(dns.length, 0);
+});
+
+test("no receipt to a domain that cannot receive email", async () => {
+  hasMx = false;
+  const res = await handleContact(post(valid), env);
+  assert.equal(res.status, 200);
+  assert.equal((await res.json()).receipt, "no_mx");
+  assert.equal(calls.length, 1);
+});
+
+test("receipts are rate limited per address", async () => {
+  const keys = [];
+  const limiter = { limit: async ({ key }) => (keys.push(key), { success: false }) };
+  const res = await handleContact(post(valid), { ...env, RECEIPT_LIMITER: limiter });
+  assert.equal((await res.json()).receipt, "rate_limited");
+  assert.deepEqual(keys, [valid.email]);
+  assert.equal(calls.length, 1);
+});
+
+test("a failed receipt never fails the enquiry", async () => {
+  let n = 0;
+  globalThis.fetch = async (url) => {
+    if (String(url).startsWith("https://cloudflare-dns.com/")) return Response.json({ Answer: [{ type: 15 }] });
+    n += 1;
+    return new Response("{}", { status: n === 1 ? 200 : 400 });
+  };
+  const original = console.error;
+  console.error = () => {};
+  const res = await handleContact(post(valid), env);
+  console.error = original;
+  assert.equal(res.status, 200);
+  assert.equal((await res.json()).receipt, "failed");
 });
 
 test("subject and body summarise the enquiry with readable labels", async () => {
   await handleContact(post(valid), env);
-  const { subject, textContent } = calls[0].body;
-  assert.equal(subject, "New enquiry: Online store, from Ada Obi");
-  assert.match(textContent, /About: Online store/);
-  assert.match(textContent, /Timing: In 1 to 3 months/);
-  assert.match(textContent, /Budget: ₦500k – ₦1.5m/);
-  assert.match(textContent, /Prefers: WhatsApp/);
+  const { Subject, TextPart } = calls[0].msg;
+  assert.equal(Subject, "New enquiry: Online store, from Ada Obi");
+  assert.match(TextPart, /About: Online store/);
+  assert.match(TextPart, /Timing: In 1 to 3 months/);
+  assert.match(TextPart, /Budget: ₦500k – ₦1.5m/);
+  assert.match(TextPart, /Prefers: WhatsApp/);
 });
 
 test("a phone number alone is enough; no Reply-To is set", async () => {
   const res = await handleContact(post({ ...valid, email: "" }), env);
   assert.equal(res.status, 200);
-  assert.equal(calls[0].body.replyTo, undefined);
+  assert.equal(calls[0].msg.ReplyTo, undefined);
 });
 
 test("needs an email or a phone number", () => {
@@ -102,11 +170,11 @@ test("careers: needs a role, gets its own subject, and drops timing and budget",
   assert.ok(validate(careers).errors.role);
   const res = await handleContact(post({ ...careers, role: "Frontend developer", profileUrl: "linkedin.com/in/tolu" }), env);
   assert.equal(res.status, 200);
-  const { subject, textContent } = calls[0].body;
-  assert.equal(subject, "Careers: Tolu Ade");
-  assert.match(textContent, /Role or skills: Frontend developer/);
-  assert.match(textContent, /LinkedIn or portfolio: linkedin\.com\/in\/tolu/);
-  assert.doesNotMatch(textContent, /Timing|Budget/);
+  const { Subject, TextPart } = calls[0].msg;
+  assert.equal(Subject, "Careers: Tolu Ade");
+  assert.match(TextPart, /Role or skills: Frontend developer/);
+  assert.match(TextPart, /LinkedIn or portfolio: linkedin\.com\/in\/tolu/);
+  assert.doesNotMatch(TextPart, /Timing|Budget/);
 });
 
 test("non-build enquiries require a message", () => {
@@ -117,7 +185,7 @@ test("non-build enquiries require a message", () => {
 
 test("partnership subject uses the organisation name", async () => {
   await handleContact(post({ service: "partnership", name: "Ada Obi", business: "Acme Ltd", email: "ada@acme.test", message: "We'd like to refer clients to you." }), env);
-  assert.equal(calls[0].body.subject, "Partnership enquiry: Acme Ltd");
+  assert.equal(calls[0].msg.Subject, "Partnership enquiry: Acme Ltd");
 });
 
 test("role fields are ignored unless Careers is chosen", () => {
