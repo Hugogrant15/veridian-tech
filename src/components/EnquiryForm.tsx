@@ -26,6 +26,7 @@ import OPTIONS from "../config/enquiry-options.json";
 import { COMPANY, PRIMARY_PHONE, WHATSAPP_URL } from "../config/company";
 import { ArrowIcon, WhatsAppGlyph } from "./ui";
 import { FileDrop } from "./FileDrop";
+import { DeliveryFields } from "./DeliveryFields";
 
 // Short, branching form built to convert. One choice on step 1; tapping it moves straight on.
 // Build work: what → timing/budget → details (3 steps). IT equipment: what → which items →
@@ -87,8 +88,11 @@ interface Draft {
   message: string;
   /** IT supply: ticked item id → quantity as typed ("" when none). */
   supplyItems: Record<string, string>;
+  /** IT supply delivery: state from the fixed list, typed city or area, and when it is needed. */
+  deliveryState: string;
   location: string;
   neededBy: string;
+  neededDate: string;
   purchaseType: string;
 }
 
@@ -106,8 +110,10 @@ const EMPTY: Draft = {
   profileUrl: "",
   message: "",
   supplyItems: {},
+  deliveryState: "",
   location: "",
   neededBy: "",
+  neededDate: "",
   purchaseType: "",
 };
 
@@ -173,8 +179,10 @@ function whatsappText(d: Draft): string {
       .filter((i) => i.id in d.supplyItems)
       .map((i) => (d.supplyItems[i.id] ? `${i.label} × ${d.supplyItems[i.id]}` : i.label));
     if (needs.length) lines.push(`Needs: ${needs.join(", ")}`);
-    if (d.location) lines.push(`Delivery: ${d.location}`);
-    if (d.neededBy) lines.push(`Needed by: ${d.neededBy}`);
+    const place = [d.location, d.deliveryState].filter(Boolean).join(", ");
+    if (place) lines.push(`Delivery: ${place}`);
+    const when = d.neededBy === "date" ? d.neededDate : labelOf(OPTIONS.neededBy, d.neededBy);
+    if (when) lines.push(`Needed by: ${when}`);
     if (d.purchaseType) lines.push(`Purchase: ${labelOf(OPTIONS.purchaseTypes, d.purchaseType)}`);
   }
   if (c.careers && d.role) lines.push(`Role or skills: ${d.role}`);
@@ -378,8 +386,10 @@ function Form({ initial }: { initial: Draft }) {
         role: c.careers ? draft.role : "",
         profileUrl: c.careers ? draft.profileUrl : "",
         supplyItems: c.supply ? draft.supplyItems : {},
+        deliveryState: c.supply ? draft.deliveryState : "",
         location: c.supply ? draft.location : "",
         neededBy: c.supply ? draft.neededBy : "",
+        neededDate: c.supply ? draft.neededDate : "",
         purchaseType: c.supply ? draft.purchaseType : "",
         fax,
       });
@@ -630,22 +640,11 @@ function Form({ initial }: { initial: Draft }) {
 
           {step === 5 && (
             <div className="flex flex-col gap-5">
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="location" className={labelClass}>
-                    Delivery location {optional}
-                  </label>
-                  <input id="location" name="location" maxLength={120} placeholder="City and state" value={draft.location} onChange={onInput} className={inputClass} />
-                  <FieldError message={errors.location} />
-                </div>
-                <div>
-                  <label htmlFor="neededBy" className={labelClass}>
-                    Needed by {optional}
-                  </label>
-                  <input id="neededBy" name="neededBy" maxLength={80} placeholder="A date, or e.g. within 4 weeks" value={draft.neededBy} onChange={onInput} className={inputClass} />
-                  <FieldError message={errors.neededBy} />
-                </div>
-              </div>
+              <DeliveryFields
+                value={{ state: draft.deliveryState, city: draft.location, neededBy: draft.neededBy, neededDate: draft.neededDate }}
+                onChange={(v) => setDraft((d) => ({ ...d, deliveryState: v.state, location: v.city, neededBy: v.neededBy, neededDate: v.neededDate }))}
+              />
+              <FieldError message={errors.location || errors.neededBy} />
               <fieldset>
                 <legend className={labelClass}>Type of purchase {optional}</legend>
                 <div className="grid gap-3 sm:grid-cols-3">
