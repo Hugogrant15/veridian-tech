@@ -37,6 +37,14 @@ export function officeEmailHtml(data, labels, subject, origin, now = new Date())
   const wants = [`<p style="margin:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#5B6660;font-weight:bold;">Enquiry about</p>`,
     `<p style="margin:4px 0 0;font-size:22px;font-weight:bold;color:#075C33;">${esc(labels.service)}</p>`];
   const facts = [];
+  if (labels.needs) facts.push(row("Needs", `<strong>${esc(labels.needs)}</strong>`));
+  if (data.location) facts.push(row("Delivery", esc(data.location)));
+  if (data.neededBy) facts.push(row("Needed by", esc(data.neededBy)));
+  if (labels.purchase) {
+    const tender = data.purchaseType === "tender";
+    facts.push(row("Purchase", tender ? `<span style="display:inline-block;padding:3px 10px;border-radius:4px;background:#C9A55C;color:#062B1C;font-size:13px;font-weight:bold;">${esc(labels.purchase)}</span>` : esc(labels.purchase)));
+  }
+  if (labels.files?.length) facts.push(row("Attached", labels.files.map((name) => `📎 ${esc(name)}`).join("<br>")));
   if (labels.timeline) facts.push(row("Timing", esc(labels.timeline)));
   if (labels.budget) facts.push(row("Budget", esc(labels.budget)));
   if (data.role) facts.push(row("Role or skills", esc(data.role)));
@@ -69,7 +77,7 @@ export function officeEmailHtml(data, labels, subject, origin, now = new Date())
   ].join("");
 
   return emailShell({
-    heading: "New website enquiry",
+    heading: data.service === "it-supply" ? "New quote request" : "New website enquiry",
     logo: `${origin}${LOGO_PATH}`,
     body,
     footer: `Sent from the contact form on <a href="${origin}" style="color:#075C33;">${origin.replace(/^https:\/\//, "")}</a> · ${esc(when)} (Lagos)<br>${COMPANY_NAME}`,

@@ -20,10 +20,13 @@ import SITE from "../src/config/site.json" with { type: "json" };
 import { receiptFor } from "./receipt.js";
 import { officeEmailHtml } from "./office.js";
 import { COMPANY_NAME } from "./emailLayout.js";
+import { UPLOAD_LIMITS, checkAttachments } from "./attachments.js";
 
-const LIMITS = { name: 100, business: 120, email: 254, phone: 30, siteUrl: 200, role: 120, profileUrl: 200, message: 5000 };
+const LIMITS = { name: 100, business: 120, email: 254, phone: 30, siteUrl: 200, role: 120, profileUrl: 200, message: 5000, location: 120, neededBy: 80 };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const MAX_BODY_BYTES = 16 * 1024;
+// A quote request with files: the files plus a little room for the form fields.
+const MAX_UPLOAD_BODY_BYTES = UPLOAD_LIMITS.maxTotalBytes + 64 * 1024;
 const CONTACT_PREFS = ["whatsapp", "call", "email"];
 
 const labelsOf = (list) => new Map(list.map((o) => [o.id, o.label]));
@@ -33,6 +36,10 @@ const BUILD_IDS = new Set(OPTIONS.services.filter((s) => s.group === "build").ma
 export const isBuild = (service) => BUILD_IDS.has(service);
 const TIMELINE_LABELS = labelsOf(OPTIONS.timelines);
 const BUDGET_LABELS = labelsOf(OPTIONS.budgets);
+export const SUPPLY_ITEMS = new Map(OPTIONS.supplyItems.map((o) => [o.id, o]));
+const PURCHASE_LABELS = labelsOf(OPTIONS.purchaseTypes);
+/** The IT supply option: its own fields, an optional message, and file uploads. */
+export const isSupply = (service) => service === "it-supply";
 
 const json = (status, body) =>
   new Response(JSON.stringify(body), {
@@ -57,7 +64,11 @@ const cleanMessage = (value) =>
 // Only ids from the shared option list survive; anything else is dropped.
 const pick = (value, labels) => (typeof value === "string" && labels.has(value) ? value : "");
 
-export function validate(input) {
+/**
+ * @param input     the submitted fields
+ * @param hasFiles  true when files came with the request (an IT supply list can stand in for ticked items)
+ */
+export function validate(input, { hasFiles = false } = {}) {
   const data = {
     // Exactly one option; anything not on the shared list is dropped.
     service: pick(input.service, SERVICE_LABELS),
@@ -72,12 +83,30 @@ export function validate(input) {
     profileUrl: clean(input.profileUrl),
     contactPref: CONTACT_PREFS.includes(input.contactPref) ? input.contactPref : "",
     message: cleanMessage(input.message),
+    supplyItems: [],
+    location: "",
+    neededBy: "",
+    purchaseType: "",
   };
   // Timing and budget only mean something for build work; drop them otherwise.
   const build = isBuild(data.service);
   if (build) {
     data.timeline = pick(input.timeline, TIMELINE_LABELS);
     data.budget = pick(input.budget, BUDGET_LABELS);
+  }
+  // IT supply: which items (with an optional quantity each), where, by when, and how it is bought.
+  const supply = isSupply(data.service);
+  if (supply) {
+    const items = input.supplyItems && typeof input.supplyItems === "object" && !Array.isArray(input.supplyItems) ? input.supplyItems : {};
+    data.supplyItems = Object.entries(items)
+      .filter(([id]) => SUPPLY_ITEMS.has(id))
+      .map(([id, qty]) => {
+        const n = Number.parseInt(String(qty ?? "").replace(/\D/g, "").slice(0, 6), 10);
+        return { id, qty: SUPPLY_ITEMS.get(id).qtyLabel && n > 0 ? n : 0 };
+      });
+    data.location = clean(input.location);
+    data.neededBy = clean(input.neededBy);
+    data.purchaseType = pick(input.purchaseType, PURCHASE_LABELS);
   }
   const careers = data.service === "careers";
   if (!careers) {
@@ -91,9 +120,12 @@ export function validate(input) {
     errors.role = "Tell us the role or skills you're interested in.";
   if (data.profileUrl.length > LIMITS.profileUrl || /\s/.test(data.profileUrl))
     errors.profileUrl = "Please enter a valid link.";
-  // With nothing to build, the message is the enquiry, so it is required.
-  if (!build && data.service && data.message.length < 10)
+  // With nothing to build, the message is the enquiry, so it is required. IT supply has its own fields instead.
+  if (!build && !supply && data.service && data.message.length < 10)
     errors.message = "Please write a few words so we know how to help.";
+  if (supply && data.supplyItems.length === 0 && !hasFiles) errors.supplyItems = "Tick what you need, or attach your list.";
+  if (data.location.length > LIMITS.location) errors.location = "Please shorten the delivery location.";
+  if (data.neededBy.length > LIMITS.neededBy) errors.neededBy = "Please shorten this.";
   if (data.name.length < 2 || data.name.length > LIMITS.name) errors.name = "Please enter your name.";
   if (data.business.length > LIMITS.business) errors.business = "Please shorten your business name.";
   if (data.email && (data.email.length > LIMITS.email || !EMAIL_RE.test(data.email)))
@@ -110,8 +142,20 @@ export function validate(input) {
 export function subjectFor(data) {
   if (data.service === "careers") return `Careers: ${data.name}`;
   if (data.service === "partnership") return `Partnership enquiry: ${data.business || data.name}`;
+  if (isSupply(data.service)) return `Quote request: IT equipment, from ${data.business || data.name}`;
   const label = SERVICE_LABELS.get(data.service);
   return isBuild(data.service) ? `New enquiry: ${label}, from ${data.name}` : `${label}, from ${data.name}`;
+}
+
+/** "Laptops in bulk × 40 laptops · CCTV × 8 cameras · Networking and Wi-Fi" */
+export function supplyLine(items) {
+  return items
+    .map(({ id, qty }) => {
+      const item = SUPPLY_ITEMS.get(id);
+      if (!qty) return item.label;
+      return item.qtyLabel === "Quantity" ? `${item.label} × ${qty}` : `${item.label} × ${qty} ${item.qtyLabel.toLowerCase()}`;
+    })
+    .join(" · ");
 }
 
 /** Plain-text summary for the office inbox. */
@@ -124,6 +168,10 @@ export function summarise(data) {
       `Budget: ${BUDGET_LABELS.get(data.budget) || "not given"}`,
     );
   }
+  if (data.supplyItems.length) lines.push(`Needs: ${supplyLine(data.supplyItems)}`);
+  if (data.location) lines.push(`Delivery: ${data.location}`);
+  if (data.neededBy) lines.push(`Needed by: ${data.neededBy}`);
+  if (data.purchaseType) lines.push(`Purchase: ${PURCHASE_LABELS.get(data.purchaseType)}`);
   if (data.role) lines.push(`Role or skills: ${data.role}`);
   if (data.profileUrl) lines.push(`LinkedIn or portfolio: ${data.profileUrl}`);
   if (data.siteUrl) lines.push(`Current website: ${data.siteUrl}`);
@@ -194,10 +242,27 @@ async function sendReceipt(env, data, live) {
 
 export async function handleContact(request, env) {
   if (request.method !== "POST") return json(405, { error: "method_not_allowed" });
-  if (!(request.headers.get("content-type") || "").includes("application/json"))
-    return json(415, { error: "unsupported_media_type" });
+  const type = request.headers.get("content-type") || "";
+  const multipart = type.includes("multipart/form-data");
+  if (!multipart && !type.includes("application/json")) return json(415, { error: "unsupported_media_type" });
 
-  const raw = await request.text();
+  // JSON for every enquiry; multipart only when an IT supply request carries files
+  // (the fields as JSON in "payload", plus up to three "files").
+  let raw;
+  let files = [];
+  if (multipart) {
+    if (Number(request.headers.get("content-length") || 0) > MAX_UPLOAD_BODY_BYTES) return json(413, { error: "too_large" });
+    let form;
+    try {
+      form = await request.formData();
+    } catch {
+      return json(400, { error: "invalid_form" });
+    }
+    raw = String(form.get("payload") ?? "");
+    files = form.getAll("files").filter((f) => typeof f === "object");
+  } else {
+    raw = await request.text();
+  }
   if (raw.length > MAX_BODY_BYTES) return json(413, { error: "too_large" });
 
   let input;
@@ -211,7 +276,11 @@ export async function handleContact(request, env) {
   // Honeypot: real visitors never see this field. Pretend success so bots move on.
   if (clean(input.fax)) return json(200, { ok: true });
 
-  const { data, errors } = validate(input);
+  const { data, errors } = validate(input, { hasFiles: files.length > 0 });
+  // Files are only taken with an IT supply request.
+  if (files.length && !isSupply(data.service)) errors.files = "Attachments are only for IT equipment requests.";
+  const checked = errors.files ? { attachments: [], names: [], error: "" } : await checkAttachments(files);
+  if (checked.error) errors.files = checked.error;
   if (Object.keys(errors).length) return json(422, { error: "invalid", fields: errors });
 
   if (env.CONTACT_LIMITER) {
@@ -229,6 +298,9 @@ export async function handleContact(request, env) {
     service: SERVICE_LABELS.get(data.service),
     timeline: TIMELINE_LABELS.get(data.timeline) || (isBuild(data.service) ? "Not given" : ""),
     budget: BUDGET_LABELS.get(data.budget) || (isBuild(data.service) ? "Not given" : ""),
+    needs: data.supplyItems.length ? supplyLine(data.supplyItems) : "",
+    purchase: PURCHASE_LABELS.get(data.purchaseType) || "",
+    files: checked.names,
   };
   const delivered = await mailjet(
     env,
@@ -240,6 +312,8 @@ export async function handleContact(request, env) {
       Subject: subject,
       TextPart: summarise(data),
       HTMLPart: officeEmailHtml(data, labels, subject, `https://${SITE.domain}`),
+      // Files go to the office copy only, never to the visitor's acknowledgement.
+      ...(checked.attachments.length ? { Attachments: checked.attachments } : {}),
     },
     live,
   );
