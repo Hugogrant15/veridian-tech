@@ -18,6 +18,8 @@
 import OPTIONS from "../src/config/enquiry-options.json" with { type: "json" };
 import SITE from "../src/config/site.json" with { type: "json" };
 import { receiptFor } from "./receipt.js";
+import { officeEmailHtml } from "./office.js";
+import { COMPANY_NAME } from "./emailLayout.js";
 
 const LIMITS = { name: 100, business: 120, email: 254, phone: 30, siteUrl: 200, role: 120, profileUrl: 200, message: 5000 };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -174,13 +176,13 @@ async function sendReceipt(env, data, live) {
     if (!success) return "rate_limited";
   }
   if (!(await canReceiveMail(data.email))) return "no_mx";
-  const { subject, text, html } = receiptFor(data.service, `https://${SITE.domain}`);
+  const { subject, text, html } = receiptFor(data.service, SERVICE_LABELS.get(data.service), data.contactPref, `https://${SITE.domain}`);
   const sent = await mailjet(
     env,
     {
-      From: { Email: env.MAIL_FROM, Name: "Veridian Tech" },
+      From: { Email: env.MAIL_FROM, Name: COMPANY_NAME },
       To: [{ Email: data.email }],
-      ReplyTo: { Email: env.CONTACT_TO, Name: "Veridian Tech" },
+      ReplyTo: { Email: env.CONTACT_TO, Name: COMPANY_NAME },
       Subject: subject,
       TextPart: text,
       HTMLPart: html,
@@ -222,15 +224,22 @@ export async function handleContact(request, env) {
     return json(503, { error: "not_configured" });
 
   const live = env.MAIL_LIVE === "true";
+  const subject = subjectFor(data);
+  const labels = {
+    service: SERVICE_LABELS.get(data.service),
+    timeline: TIMELINE_LABELS.get(data.timeline) || (isBuild(data.service) ? "Not given" : ""),
+    budget: BUDGET_LABELS.get(data.budget) || (isBuild(data.service) ? "Not given" : ""),
+  };
   const delivered = await mailjet(
     env,
     {
-      From: { Email: env.MAIL_FROM, Name: "Veridian Tech website" },
+      From: { Email: env.MAIL_FROM, Name: COMPANY_NAME },
       To: [{ Email: env.CONTACT_TO }],
       // Reply-To only when the visitor gave an email; otherwise we reply by phone/WhatsApp.
       ...(data.email ? { ReplyTo: { Email: data.email, Name: data.name } } : {}),
-      Subject: subjectFor(data),
+      Subject: subject,
       TextPart: summarise(data),
+      HTMLPart: officeEmailHtml(data, labels, subject, `https://${SITE.domain}`),
     },
     live,
   );

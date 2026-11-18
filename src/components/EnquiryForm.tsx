@@ -360,6 +360,10 @@ function Form({ initial }: { initial: Draft }) {
 
   if (status === "sent" || status === "failed") {
     const sent = status === "sent";
+    // After a successful send, the screen follows the reply method the visitor chose;
+    // only a WhatsApp preference gets the big WhatsApp button.
+    const reply = { email: "by email", whatsapp: "on WhatsApp", call: "with a call" }[draft.contactPref] ?? "";
+    const showWhatsAppButton = !sent || draft.contactPref === "whatsapp";
     return (
       <div ref={formRef} className={`${card} scroll-mt-28`} role={sent ? "status" : "alert"}>
         <div className="flex flex-col items-start gap-4">
@@ -373,18 +377,38 @@ function Form({ initial }: { initial: Draft }) {
           </h2>
           <p className="leading-relaxed text-body">
             {sent
-              ? "We'll reply on the contact details you gave us. Want an answer sooner? Continue the conversation on WhatsApp."
+              ? `We'll get back to you${reply ? ` ${reply}` : ""} within 24 hours.${draft.email ? " A confirmation is on its way to your inbox." : ""}`
               : "Your message couldn't be sent from the website right now. Tap below and WhatsApp opens with everything you've told us already typed."}
           </p>
-          <a
-            href={waLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-2 inline-flex h-14 w-full items-center justify-center gap-3 rounded-md bg-[#25D366] px-6 font-semibold text-white transition-transform hover:brightness-105 active:scale-[0.98] sm:w-auto"
-          >
-            <WhatsAppGlyph className="size-5" />
-            {sent ? "Continue on WhatsApp" : "Send on WhatsApp"}
-          </a>
+          {showWhatsAppButton && (
+            <a
+              href={waLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex h-14 w-full items-center justify-center gap-3 rounded-md bg-[#25D366] px-6 font-semibold text-white transition-transform hover:brightness-105 active:scale-[0.98] sm:w-auto"
+            >
+              <WhatsAppGlyph className="size-5" />
+              {sent ? "Continue on WhatsApp" : "Send on WhatsApp"}
+            </a>
+          )}
+          {sent && draft.contactPref === "call" && (
+            <p className="text-sm text-muted">
+              Urgent? Call{" "}
+              <a href={`tel:${PRIMARY_PHONE.tel}`} className="font-semibold text-emerald-deep underline">
+                {PRIMARY_PHONE.display}
+              </a>
+              .
+            </p>
+          )}
+          {sent && !showWhatsAppButton && draft.contactPref !== "call" && (
+            <p className="text-sm text-muted">
+              Urgent?{" "}
+              <a href={waLink} target="_blank" rel="noopener noreferrer" className="font-semibold text-emerald-deep underline">
+                WhatsApp us
+              </a>
+              .
+            </p>
+          )}
           {!sent && (
             <p className="text-sm text-muted">
               Or call{" "}
