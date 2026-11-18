@@ -57,7 +57,7 @@ RhemaVerse is described without naming any church or customer.
 - In production a sandboxed send (`sandbox: true`) is treated as **not delivered**: the visitor gets the WhatsApp fallback with their request pre-typed, so no lead is silently lost.
 - `/contact?service=<id>` opens the form with that service ticked (used by "Start this project" on the Services page).
 
-Secrets, set in the Cloudflare dashboard (Worker → Settings → Variables and Secrets), never in the repo:
+Settings. The two keys and `MAIL_LIVE` are **secrets**, set in the Cloudflare dashboard (Worker → Settings → Variables and Secrets, type "Secret"), never in the repo. The two addresses are public and live in `wrangler.jsonc` under `vars`:
 
 | Name | Value |
 |---|---|
