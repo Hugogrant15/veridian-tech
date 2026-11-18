@@ -1,6 +1,7 @@
 import { test, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { handleContact, summarise, validate } from "../worker/contact.js";
+import { whatsappNumber } from "../worker/office.js";
 
 const env = { MAILJET_API_KEY: "key", MAILJET_SECRET_KEY: "secret", MAIL_FROM: "noreply@example.test", CONTACT_TO: "office@example.test" };
 const valid = {
@@ -238,4 +239,42 @@ test("reports a provider failure as 502", async () => {
   const res = await handleContact(post(valid), env);
   console.error = original;
   assert.equal(res.status, 502);
+});
+
+test("both emails come from the full company name", async () => {
+  await handleContact(post(valid), env);
+  assert.equal(calls[0].msg.From.Name, "Veridian Tech Innovations Ltd");
+  assert.equal(calls[1].msg.From.Name, "Veridian Tech Innovations Ltd");
+  assert.equal(calls[1].msg.ReplyTo.Name, "Veridian Tech Innovations Ltd");
+});
+
+test("the office email escapes everything the visitor typed", async () => {
+  const hostile = { ...valid, name: "<b>Ada</b>", business: '"><img src=x onerror=alert(1)>', message: "<script>alert(1)</script> & more" };
+  await handleContact(post(hostile), env);
+  const html = calls[0].msg.HTMLPart;
+  assert.doesNotMatch(html, /<script>|<img src=x|<b>Ada/);
+  assert.ok(html.includes("&lt;script&gt;alert(1)&lt;/script&gt; &amp; more"));
+  assert.ok(html.includes("&lt;b&gt;Ada&lt;/b&gt;"));
+});
+
+test("the office email has one-tap replies, the preferred one first in weight", async () => {
+  await handleContact(post({ ...valid, contactPref: "email" }), env);
+  const html = calls[0].msg.HTMLPart;
+  assert.ok(html.includes('href="mailto:ada@example.test?subject=Re%3A%20New%20enquiry'));
+  assert.ok(html.includes('href="https://wa.me/2348060000000"'));
+  assert.ok(html.includes('href="tel:08060000000"'));
+  assert.match(html, /Prefers<\/td><td[^>]*><span[^>]*>Email</);
+});
+
+test("the receipt names the chosen service and reply method from the fixed lists", async () => {
+  await handleContact(post({ ...valid, contactPref: "email" }), env);
+  const { TextPart, HTMLPart } = calls[1].msg;
+  assert.match(TextPart, /You asked about: Online store/);
+  assert.match(TextPart, /get back to you by email within 24 hours/);
+  assert.match(HTMLPart, /Veridian Tech Innovations Ltd/);
+});
+
+test("WhatsApp links use the international form of Nigerian numbers", () => {
+  assert.equal(whatsappNumber("0806 504 1081"), "2348065041081");
+  assert.equal(whatsappNumber("+234 806 504 1081"), "2348065041081");
 });

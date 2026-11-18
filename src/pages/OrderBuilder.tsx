@@ -355,7 +355,10 @@ export default function OrderBuilder() {
             {status === "sent" ? (
               <p className="flex items-start gap-3 rounded-md border border-emerald-bright/40 bg-emerald-bright/10 p-4">
                 <Check size={20} className="mt-0.5 flex-shrink-0 text-emerald-bright" aria-hidden="true" />
-                <span>Your request is with us. We will reply with a written quotation.</span>
+                <span>
+                  Your request is with us. We&apos;ll get back to you within 24 hours with any questions or a written quotation.
+                  {contact.email.trim() ? " A confirmation is on its way to your inbox." : ""}
+                </span>
               </p>
             ) : (
               <>
@@ -372,15 +375,18 @@ export default function OrderBuilder() {
                 </button>
               </>
             )}
-            <a
-              href={whatsappUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-14 items-center justify-center gap-3 rounded-md border border-pearl/25 px-6 font-semibold whitespace-nowrap text-pearl transition-colors hover:border-[#25D366] hover:bg-[#25D366]/10"
-            >
-              <WhatsAppGlyph className="size-5 text-[#25D366]" />
-              Send on WhatsApp
-            </a>
+            {/* Once the request has gone, offering WhatsApp again would only send it twice. */}
+            {status !== "sent" && (
+              <a
+                href={whatsappUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-14 items-center justify-center gap-3 rounded-md border border-pearl/25 px-6 font-semibold whitespace-nowrap text-pearl transition-colors hover:border-[#25D366] hover:bg-[#25D366]/10"
+              >
+                <WhatsAppGlyph className="size-5 text-[#25D366]" />
+                Send on WhatsApp
+              </a>
+            )}
             <button type="button" onClick={copySpec} className="inline-flex h-12 items-center justify-center gap-2 text-sm font-semibold whitespace-nowrap text-gold-light hover:underline">
               <Copy size={16} aria-hidden="true" />
               {copied ? "Copied" : "Copy the specification"}
