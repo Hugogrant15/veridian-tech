@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { ArrowUpRight, ChevronDown, Laptop, Menu, X, type LucideIcon } from "lucide-react";
 import { Building2, Briefcase, Package } from "lucide-react";
@@ -170,18 +170,50 @@ function Dropdown({ group, open, onOpen, onClose, active }: { group: NavGroup; o
   );
 }
 
-function MobileSection({ title, children }: { title: string; children: ReactNode }) {
+const mobileRow = "flex w-full items-center justify-between rounded-2xl px-3 py-3.5 text-[17px] font-medium";
+
+/** One accordion group in the phone menu: a row that opens to show its links. */
+function MobileGroup({ group, open, onToggle, onNavigate, active }: { group: NavGroup; open: boolean; onToggle: () => void; onNavigate: () => void; active: boolean }) {
+  const id = `mobile-${group.name.toLowerCase().replace(/\s+/g, "-")}`;
   return (
-    <div className="border-t border-line py-4 first:border-t-0 first:pt-0">
-      <p className="mb-2 px-3 text-xs font-semibold tracking-[0.16em] text-muted uppercase">{title}</p>
-      {children}
-    </div>
+    <li className="border-b border-line last:border-b-0">
+      <button type="button" aria-expanded={open} aria-controls={id} onClick={onToggle} className={`${mobileRow} ${active ? "text-emerald-deep" : "text-ink"}`}>
+        {group.name}
+        <ChevronDown size={20} aria-hidden="true" className={`text-muted transition-transform duration-300 motion-reduce:transition-none ${open ? "rotate-180" : ""}`} />
+      </button>
+      {/* Slides open: the row grows from 0fr to 1fr. */}
+      <div id={id} className={`grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+        <ul className="min-h-0 overflow-hidden">
+          {group.items.map((item) => (
+            <li key={item.to}>
+              <NavLink
+                to={item.to}
+                onClick={onNavigate}
+                tabIndex={open ? 0 : -1}
+                className={({ isActive }) => `flex items-center gap-3 rounded-2xl px-3 py-2.5 text-[16px] ${isActive ? "bg-pearl font-semibold text-emerald-deep" : "text-ink"}`}
+              >
+                {item.Icon && <item.Icon size={18} strokeWidth={1.7} className="flex-shrink-0 text-emerald-deep" aria-hidden="true" />}
+                {item.name}
+              </NavLink>
+            </li>
+          ))}
+          <li className="pb-2">
+            <Link to={group.to} onClick={onNavigate} tabIndex={open ? 0 : -1} className="flex items-center gap-2 rounded-2xl px-3 py-2.5 text-sm font-semibold text-emerald-deep">
+              {group.allLabel}
+              <ArrowUpRight size={16} aria-hidden="true" />
+            </Link>
+          </li>
+        </ul>
+      </div>
+    </li>
   );
 }
 
 export function Navbar() {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  // The phone menu's open group; one at a time.
+  const [mobileGroup, setMobileGroup] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const { pathname } = useLocation();
   const headerRef = useRef<HTMLElement>(null);
@@ -223,6 +255,22 @@ export function Navbar() {
   }, [openMenu, mobileOpen]);
 
   const groupActive = (group: NavGroup) => group.items.some((i) => pathname === i.to || pathname.startsWith(`${i.to}/`)) || pathname === group.to;
+
+  // Opening the phone menu starts with the group of the current page open, if any.
+  const toggleMobile = () => {
+    if (!mobileOpen) setMobileGroup(NAV.find((e): e is NavGroup => isGroup(e) && groupActive(e))?.name ?? null);
+    setMobileOpen((v) => !v);
+  };
+
+  // The page behind the phone menu does not scroll while it is open.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [mobileOpen]);
 
   return (
     <header ref={headerRef} className="pointer-events-none fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-5 sm:pt-4">
@@ -269,7 +317,7 @@ export function Navbar() {
 
         <button
           type="button"
-          onClick={() => setMobileOpen((v) => !v)}
+          onClick={toggleMobile}
           aria-expanded={mobileOpen}
           aria-controls="mobile-menu"
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
@@ -287,42 +335,27 @@ export function Navbar() {
         }`}
       >
         <nav aria-label="Mobile">
-          {NAV.map((entry) =>
-            isGroup(entry) ? (
-              <MobileSection key={entry.name} title={entry.name}>
-                <ul className="flex flex-col">
-                  {entry.items.map((item) => (
-                    <li key={item.to}>
-                      <NavLink
-                        to={item.to}
-                        onClick={closeAll}
-                        className={({ isActive }) => `flex items-center gap-3 rounded-2xl px-3 py-2.5 text-[16px] ${isActive ? "bg-pearl font-semibold text-emerald-deep" : "text-ink"}`}
-                      >
-                        {item.Icon && <item.Icon size={18} strokeWidth={1.7} className="text-emerald-deep" aria-hidden="true" />}
-                        {item.name}
-                      </NavLink>
-                    </li>
-                  ))}
-                </ul>
-              </MobileSection>
-            ) : null,
-          )}
-          <MobileSection title="More">
-            <ul className="flex flex-col">
-              {NAV.filter((e): e is NavItem => !isGroup(e)).map((item) => (
-                <li key={item.to}>
-                  <NavLink
-                    to={item.to}
-                    onClick={closeAll}
-                    className={({ isActive }) => `block rounded-2xl px-3 py-2.5 text-[16px] ${isActive ? "bg-pearl font-semibold text-emerald-deep" : "text-ink"}`}
-                  >
-                    {item.name}
+          <ul className="flex flex-col">
+            {NAV.map((entry) =>
+              isGroup(entry) ? (
+                <MobileGroup
+                  key={entry.name}
+                  group={entry}
+                  open={mobileGroup === entry.name}
+                  onToggle={() => setMobileGroup((g) => (g === entry.name ? null : entry.name))}
+                  onNavigate={closeAll}
+                  active={groupActive(entry)}
+                />
+              ) : (
+                <li key={entry.to} className="border-b border-line last:border-b-0">
+                  <NavLink to={entry.to} onClick={closeAll} className={({ isActive }) => `${mobileRow} ${isActive ? "text-emerald-deep" : "text-ink"}`}>
+                    {entry.name}
                   </NavLink>
                 </li>
-              ))}
-            </ul>
-          </MobileSection>
-          <div className="pt-2">
+              ),
+            )}
+          </ul>
+          <div className="pt-4">
             <CtaPill onClick={closeAll} className="w-full justify-between" />
           </div>
         </nav>
