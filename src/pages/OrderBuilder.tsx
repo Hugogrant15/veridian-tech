@@ -57,6 +57,26 @@ export default function OrderBuilder() {
 
   const total = groups.reduce((sum, g) => sum + g.qty, 0);
 
+  // The choices beyond the laptops, as [label, value] rows for the specification sheet.
+  // "No preference" and empty answers are left out.
+  const place = [delivery.city.trim(), delivery.state].filter(Boolean).join(", ");
+  const neededByLabel =
+    delivery.neededBy === "date"
+      ? delivery.neededDate &&
+        new Date(`${delivery.neededDate}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })
+      : OPTIONS.neededBy.find((o) => o.id === delivery.neededBy)?.label;
+  const orderDetails = (
+    [
+      ["Brand", brand === BRANDS[0] ? "" : brand],
+      ["Operating system", os === OPERATING_SYSTEMS[0] ? "" : os],
+      ["Also needed", ADD_ONS.filter((s) => addOns.includes(s.id)).map((s) => s.short).join(", ")],
+      ["Delivery", place],
+      ["Needed by", neededByLabel ?? ""],
+      ["Purchase", purchaseType],
+      ["Attached", files.length ? `${files.length} file${files.length === 1 ? "" : "s"}` : ""],
+    ] as [string, string][]
+  ).filter(([, value]) => value);
+
   const updateGroup = (key: number, change: Partial<Group>) =>
     setGroups((list) => list.map((g) => (g.key === key ? { ...g, ...change } : g)));
   const addGroup = () => {
@@ -376,6 +396,20 @@ export default function OrderBuilder() {
               );
             })}
           </ol>
+          {/* Everything else picked on the left, so the sheet matches what will be sent. */}
+          {orderDetails.length > 0 && (
+            <div className="mt-6 border-t border-gold/25 pt-4">
+              <p className="text-xs font-semibold tracking-[0.16em] text-gold-light uppercase">Order details</p>
+              <dl className="mt-3 flex flex-col gap-1.5 text-sm">
+                {orderDetails.map(([label, value]) => (
+                  <div key={label} className="flex justify-between gap-6">
+                    <dt className="flex-shrink-0 text-sage">{label}</dt>
+                    <dd className="text-right">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
           <p className="mt-6 border-t border-gold/25 pt-4 text-sm text-sage">
             A recommended starting point. We confirm the exact models with you before quoting.
           </p>
