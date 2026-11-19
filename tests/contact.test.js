@@ -366,3 +366,15 @@ test("needed by is a fixed choice or a real date from today on", () => {
   assert.equal(neededByDate("2026-02-30", now), "");
   assert.equal(neededByDate("15/12/2026", now), "");
 });
+
+test("brand and operating system come from the fixed lists and get their own lines", async () => {
+  const order = { ...supply, brand: "HP", os: "Windows 11 Pro" };
+  assert.equal(validate(order).data.brand, "HP");
+  assert.equal(validate({ ...order, brand: "No preference", os: "TempleOS" }).data.brand, "");
+  assert.equal(validate({ ...order, os: "TempleOS" }).data.os, "");
+  await handleContact(post(order), env);
+  const { TextPart, HTMLPart } = calls[0].msg;
+  assert.match(TextPart, /Brand: HP\nOperating system: Windows 11 Pro/);
+  assert.match(HTMLPart, /Brand<\/td><td[^>]*>HP</);
+  assert.match(HTMLPart, /Operating system<\/td><td[^>]*>Windows 11 Pro</);
+});

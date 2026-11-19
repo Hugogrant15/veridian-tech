@@ -39,6 +39,9 @@ const BUDGET_LABELS = labelsOf(OPTIONS.budgets);
 export const SUPPLY_ITEMS = new Map(OPTIONS.supplyItems.map((o) => [o.id, o]));
 const PURCHASE_LABELS = labelsOf(OPTIONS.purchaseTypes);
 const STATES = new Set(OPTIONS.states);
+// "No preference" (the first entry of each list) counts as not given.
+const BRANDS = new Set(OPTIONS.brands.slice(1));
+const OPERATING_SYSTEMS = new Set(OPTIONS.operatingSystems.slice(1));
 const NEEDED_BY_LABELS = labelsOf(OPTIONS.neededBy);
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -97,6 +100,8 @@ export function validate(input, { hasFiles = false } = {}) {
     contactPref: CONTACT_PREFS.includes(input.contactPref) ? input.contactPref : "",
     message: cleanMessage(input.message),
     supplyItems: [],
+    brand: "",
+    os: "",
     location: "",
     neededBy: "",
     purchaseType: "",
@@ -117,6 +122,8 @@ export function validate(input, { hasFiles = false } = {}) {
         const n = Number.parseInt(String(qty ?? "").replace(/\D/g, "").slice(0, 6), 10);
         return { id, qty: SUPPLY_ITEMS.get(id).qtyLabel && n > 0 ? n : 0 };
       });
+    data.brand = BRANDS.has(input.brand) ? input.brand : "";
+    data.os = OPERATING_SYSTEMS.has(input.os) ? input.os : "";
     // Delivery: a state from the fixed list plus a typed city or area, shown as "Ikeja, Lagos".
     const state = STATES.has(input.deliveryState) ? input.deliveryState : "";
     const city = clean(input.location);
@@ -186,6 +193,8 @@ export function summarise(data) {
     );
   }
   if (data.supplyItems.length) lines.push(`Needs: ${supplyLine(data.supplyItems)}`);
+  if (data.brand) lines.push(`Brand: ${data.brand}`);
+  if (data.os) lines.push(`Operating system: ${data.os}`);
   if (data.location) lines.push(`Delivery: ${data.location}`);
   if (data.neededBy) lines.push(`Needed by: ${data.neededBy}`);
   if (data.purchaseType) lines.push(`Purchase: ${PURCHASE_LABELS.get(data.purchaseType)}`);

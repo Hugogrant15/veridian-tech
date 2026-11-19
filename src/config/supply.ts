@@ -220,8 +220,6 @@ export const STAFF_PROFILES: StaffProfile[] = [
   },
 ];
 
-export const BRANDS = ["No preference", "HP", "Dell", "Lenovo", "Apple", "Asus", "Acer", "MSI", "Other (tell us in the note)"] as const;
-
 export const PURCHASE_TYPES = ["Direct purchase", "Tender or bid", "Not sure yet"] as const;
 
 /** How an order runs, start to finish. */

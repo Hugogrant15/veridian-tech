@@ -38,6 +38,8 @@ export function officeEmailHtml(data, labels, subject, origin, now = new Date())
     `<p style="margin:4px 0 0;font-size:22px;font-weight:bold;color:#075C33;">${esc(labels.service)}</p>`];
   const facts = [];
   if (labels.needs) facts.push(row("Needs", `<strong>${esc(labels.needs)}</strong>`));
+  if (data.brand) facts.push(row("Brand", esc(data.brand)));
+  if (data.os) facts.push(row("Operating system", esc(data.os)));
   if (data.location) facts.push(row("Delivery", esc(data.location)));
   if (data.neededBy) facts.push(row("Needed by", esc(data.neededBy)));
   if (labels.purchase) {

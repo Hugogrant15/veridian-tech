@@ -2,14 +2,17 @@ import { useState, type FormEvent } from "react";
 import { Check, Copy, Plus, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { COMPANY } from "../config/company";
-import { BRANDS, PURCHASE_TYPES, STAFF_PROFILES, SUPPLY_SERVICES, type StaffProfile } from "../config/supply";
+import { PURCHASE_TYPES, STAFF_PROFILES, SUPPLY_SERVICES, type StaffProfile } from "../config/supply";
 import { PageHeader } from "../components/PageHeader";
 import { Accent, Seo, WhatsAppGlyph } from "../components/ui";
 import { FileDrop } from "../components/FileDrop";
 import { DeliveryFields, type Delivery } from "../components/DeliveryFields";
 import OPTIONS from "../config/enquiry-options.json";
 
-const OPERATING_SYSTEMS = ["No preference", "Windows 11 Pro", "Windows 11 Home", "macOS", "Linux"] as const;
+// Shared with the Worker, which accepts only these values. The first of each is "No preference".
+const BRANDS = OPTIONS.brands;
+const OPERATING_SYSTEMS = OPTIONS.operatingSystems;
+const NO_PREFERENCE = "No preference";
 /** Other supply services the buyer can add to the same request. */
 const ADD_ONS = SUPPLY_SERVICES.filter((s) => s.id !== "bulk-laptops");
 const MAX_GROUPS = 8;
@@ -42,8 +45,8 @@ const legendClass = "mb-5 text-xs font-semibold tracking-[0.16em] text-muted upp
 export default function OrderBuilder() {
   const [groups, setGroups] = useState<Group[]>([{ key: 1, profileId: FIRST_PROFILE, qty: 10 }]);
   const [nextKey, setNextKey] = useState(2);
-  const [brand, setBrand] = useState<string>(BRANDS[0]);
-  const [os, setOs] = useState<string>(OPERATING_SYSTEMS[0]);
+  const [brand, setBrand] = useState(NO_PREFERENCE);
+  const [os, setOs] = useState(NO_PREFERENCE);
   const [addOns, setAddOns] = useState<string[]>([]);
   const [delivery, setDelivery] = useState<Delivery>({ state: "", city: "", neededBy: "", neededDate: "" });
   const [purchaseType, setPurchaseType] = useState<string>(PURCHASE_TYPES[0]);
@@ -67,8 +70,8 @@ export default function OrderBuilder() {
       : OPTIONS.neededBy.find((o) => o.id === delivery.neededBy)?.label;
   const orderDetails = (
     [
-      ["Brand", brand === BRANDS[0] ? "" : brand],
-      ["Operating system", os === OPERATING_SYSTEMS[0] ? "" : os],
+      ["Brand", brand === NO_PREFERENCE ? "" : brand],
+      ["Operating system", os === NO_PREFERENCE ? "" : os],
       ["Also needed", ADD_ONS.filter((s) => addOns.includes(s.id)).map((s) => s.short).join(", ")],
       ["Delivery", place],
       ["Needed by", neededByLabel ?? ""],
@@ -134,6 +137,8 @@ export default function OrderBuilder() {
         service: "it-supply",
         ...contact,
         supplyItems,
+        brand,
+        os,
         deliveryState: delivery.state,
         location: delivery.city,
         neededBy: delivery.neededBy,

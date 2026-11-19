@@ -214,5 +214,23 @@
       "id": "1-3-months",
       "label": "1 to 3 months"
     }
+  ],
+  "brands": [
+    "No preference",
+    "HP",
+    "Dell",
+    "Lenovo",
+    "Apple",
+    "Asus",
+    "Acer",
+    "MSI",
+    "Other (tell us in the note)"
+  ],
+  "operatingSystems": [
+    "No preference",
+    "Windows 11 Pro",
+    "Windows 11 Home",
+    "macOS",
+    "Linux"
   ]
 }
