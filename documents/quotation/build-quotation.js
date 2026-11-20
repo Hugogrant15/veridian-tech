@@ -41,8 +41,10 @@ const SIGNATURE_FILE = path.join(__dirname, 'private/signature.png'); // 507×33
 const SIGNATURE = fs.existsSync(SIGNATURE_FILE) ? fs.readFileSync(SIGNATURE_FILE) : null;
 
 const NIGHT = '062B1C'; // table headings
-const EMERALD = '075C33'; // the total, the only strong colour on the page apart from the logo
-const GOLD = 'C9A55C'; // hairline rules
+// Two greens, same rule as the letterhead: BRIGHT (the brand green) only on rules and large
+// bold text; EMERALD on small green text and behind the white total figures.
+const EMERALD = '075C33';
+const BRIGHT = '11A159'; // the rules
 const INK = '0F1F17';
 const MUTED = '5B6660';
 const LINE = 'CBD5CE';
@@ -104,7 +106,11 @@ function build(q) {
   const top = table([new TableRow({ children: [
     cell([p([new ImageRun({ type: 'png', data: LOGO, transformation: { width: 84, height: 96 } })])], { w: 1500, px: 0 }),
     cell([
-      p([run(COMPANY.legalName, { bold: true, size: 21 })], { after: 40 }),
+      // 10.5 pt is too small for BRIGHT, so "Veridian" is the darker green.
+      p([
+        run(COMPANY.legalName.split(' ')[0], { bold: true, size: 21, color: EMERALD }),
+        run(` ${COMPANY.legalName.split(' ').slice(1).join(' ')}`, { bold: true, size: 21 }),
+      ], { after: 40 }),
       ...COMPANY.address.map((l) => p([run(l, small)])),
       p([run('Tel: ', small), run(COMPANY.phones, { size: 17 })]),
       p([run('Email: ', small), run(COMPANY.email, { size: 17 })]),
@@ -121,7 +127,7 @@ function build(q) {
     ], { w: 4200, px: 0 }),
   ] })], [1500, W - 4200 - 1500, 4200]);
 
-  const rule = p('', { after: 140, border: { bottom: { style: BorderStyle.SINGLE, size: 18, color: GOLD, space: 1 } } });
+  const rule = p('', { after: 140, border: { bottom: { style: BorderStyle.SINGLE, size: 18, color: BRIGHT, space: 1 } } });
 
   // Customer ref + tender table.
   const cref = p([run('CUSTOMER REF: ', { bold: true }), val(S?.customerRef, '[Client’s RFQ / PO / tender no.]'), run('   ·   '), val(S?.buyer, '[Client name]')], { after: 70 });
@@ -253,7 +259,7 @@ function build(q) {
 
   const footer = new Footer({ children: [new Paragraph({
     tabStops: [{ type: TabStopType.RIGHT, position: W }],
-    border: { top: { style: BorderStyle.SINGLE, size: 12, color: GOLD, space: 6 } },
+    border: { top: { style: BorderStyle.SINGLE, size: 12, color: BRIGHT, space: 6 } },
     children: [
       new TextRun({ text: `${COMPANY.legalName}  ·  RC ${COMPANY.rc}  ·  D-U-N-S ${COMPANY.duns}  ·  ${COMPANY.website}`, font: FONT, size: 15, color: MUTED }),
       new TextRun({ children: ['\tPage ', PageNumber.CURRENT, ' of ', PageNumber.TOTAL_PAGES], font: FONT, size: 15, color: MUTED }),
