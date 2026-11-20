@@ -30,6 +30,7 @@ const COMPANY = {
   website: 'veridiantechinnovationsltd.com',
   rc: '9367650',
   duns: '352292647',
+  productSite: 'www.easypass.ng', // www is canonical; the bare domain only redirects
   signName: 'Ugochukwu Omenogor',
   signRole: 'Managing Director',
 };
@@ -122,14 +123,26 @@ const laterHeader = () => new Header({ children: [new Paragraph({
   ],
 })] });
 
-const footer = () => new Footer({ children: [new Paragraph({
-  tabStops: [{ type: TabStopType.RIGHT, position: W }],
-  border: { top: { style: BorderStyle.SINGLE, size: 12, color: EMERALD, space: 6 } },
-  children: [
-    new TextRun({ text: `${COMPANY.legalName}  ·  RC ${COMPANY.rc}  ·  D-U-N-S ${COMPANY.duns}  ·  ${COMPANY.website}`, font: FONT, size: 15, color: MUTED }),
-    new TextRun({ children: ['\tPage ', PageNumber.CURRENT, ' of ', PageNumber.TOTAL_PAGES], font: FONT, size: 15, color: MUTED }),
-  ],
-})] });
+// Two lines: the company's registration details, then our own product. "Makers of
+// EasyPass" is the same wording the website uses (hero, footer, About).
+const footer = () => new Footer({ children: [
+  new Paragraph({
+    tabStops: [{ type: TabStopType.RIGHT, position: W }],
+    border: { top: { style: BorderStyle.SINGLE, size: 12, color: EMERALD, space: 6 } },
+    spacing: { after: 30 },
+    children: [
+      new TextRun({ text: `${COMPANY.legalName}  ·  RC ${COMPANY.rc}  ·  D-U-N-S ${COMPANY.duns}  ·  ${COMPANY.website}`, font: FONT, size: 15, color: MUTED }),
+      new TextRun({ children: ['\tPage ', PageNumber.CURRENT, ' of ', PageNumber.TOTAL_PAGES], font: FONT, size: 15, color: MUTED }),
+    ],
+  }),
+  new Paragraph({
+    children: [
+      new TextRun({ text: 'Makers of ', font: FONT, size: 15, color: MUTED }),
+      new TextRun({ text: 'EasyPass', font: FONT, size: 15, bold: true, color: EMERALD }),
+      new TextRun({ text: `, visitor management for residential estates  ·  ${COMPANY.productSite}`, font: FONT, size: 15, color: MUTED }),
+    ],
+  }),
+] });
 
 // ---------- body ----------
 function letterBody() {
@@ -170,7 +183,7 @@ function build({ letter }) {
     title: letter ? 'Veridian Letter' : 'Veridian Letterhead',
     styles: { default: { document: { run: { font: FONT, size: BODY_SIZE, color: INK }, paragraph: { spacing: { line: 276, after: 160 } } } } },
     sections: [{
-      properties: { titlePage: true, page: { size: PAGE, margin: { top: 1100, bottom: 1000, left: MARGIN, right: MARGIN, header: 500, footer: 450 } } },
+      properties: { titlePage: true, page: { size: PAGE, margin: { top: 1100, bottom: 1080, left: MARGIN, right: MARGIN, header: 500, footer: 450 } } },
       headers: { first: firstHeader(), default: laterHeader() },
       footers: { first: footer(), default: footer() },
       children: letter ? letterBody() : [new Paragraph({ children: [run('')] })],
