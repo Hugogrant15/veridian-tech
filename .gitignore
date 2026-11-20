@@ -41,3 +41,6 @@ documents/quotation/node_modules/
 documents/letterhead/node_modules/
 documents/templates/
 documents/quotes/
+
+# Project docs: local only (this repo is public). AGENTS.md is the committed summary.
+docs/

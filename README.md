@@ -72,7 +72,9 @@ Until the first four are set the endpoint returns `503 not_configured`, and the 
 ## Deploy
 
 Cloudflare Workers Builds, connected to this GitHub repo: push to `main` deploys.
-`wrangler.jsonc` serves `dist/` with SPA fallback and runs the Worker only for `/api/*`.
+`wrangler.jsonc` serves the prerendered pages in `dist/` (unknown paths get `404.html` with a real 404) and runs the Worker only for `/api/*`.
+
+Orientation for any developer or AI agent: **`AGENTS.md`**.
 GitHub Actions (`.github/workflows/ci-cd.yml`) is the quality gate: lint, test, audit, build.
 
 Flow: push to `staging`, wait for CI to pass, then open a PR `staging → main`. Merging it deploys.
