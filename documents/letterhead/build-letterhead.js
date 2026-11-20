@@ -35,6 +35,9 @@ const COMPANY = {
   signRole: 'Managing Director',
 };
 
+// "VERIDIAN" and the rest of the name, so the first word can be green.
+const [NAME_FIRST, ...NAME_REST] = COMPANY.legalName.toUpperCase().split(' ');
+
 const LOGO = fs.readFileSync(path.join(ROOT, 'public/veridian-signature.png')); // 198×226
 // The MD's signature is private (gitignored), shared with the quotation. Without it the
 // sign-off is left blank for a pen.
@@ -42,7 +45,10 @@ const SIGNATURE_FILE = path.join(ROOT, 'documents/quotation/private/signature.pn
 const SIGNATURE = fs.existsSync(SIGNATURE_FILE) ? fs.readFileSync(SIGNATURE_FILE) : null;
 
 const NIGHT = '062B1C';
+// Two greens. BRIGHT (the brand green) only on rules and large bold text; it is too
+// light for small text, which uses EMERALD.
 const EMERALD = '075C33';
+const BRIGHT = '11A159';
 const INK = '0F1F17';
 const MUTED = '5B6660';
 const LINE = 'CBD5CE';
@@ -83,7 +89,10 @@ function firstHeader() {
   const top = table([new TableRow({ children: [
     cell([p([new ImageRun({ type: 'png', data: LOGO, transformation: { width: 106, height: 121 } })])], logoW),
     cell([
-      p([run(COMPANY.legalName.toUpperCase(), { bold: true, size: 40, color: NIGHT, spacing: 10 })], { align: AlignmentType.RIGHT, line: 240, after: 80 }),
+      p([
+        run(NAME_FIRST, { bold: true, size: 40, color: BRIGHT, spacing: 10 }),
+        run(` ${NAME_REST.join(' ')}`, { bold: true, size: 40, color: NIGHT, spacing: 10 }),
+      ], { align: AlignmentType.RIGHT, line: 240, after: 80 }),
       p([run(`RC ${COMPANY.rc}   ·   D-U-N-S ${COMPANY.duns}`, { bold: true, size: 20, color: EMERALD, spacing: 10 })], { align: AlignmentType.RIGHT, line: 240 }),
     ], W - logoW),
   ] })], [logoW, W - logoW]);
@@ -108,7 +117,7 @@ function firstHeader() {
   return new Header({ children: [
     top,
     contacts,
-    p('', { border: { bottom: { style: BorderStyle.SINGLE, size: 24, color: EMERALD, space: 1 } }, line: 120 }),
+    p('', { border: { bottom: { style: BorderStyle.SINGLE, size: 24, color: BRIGHT, space: 1 } }, line: 120 }),
     // Clear space between the rule and the first line of the letter.
     p('', { line: 360 }),
   ] });
@@ -116,10 +125,12 @@ function firstHeader() {
 
 const laterHeader = () => new Header({ children: [new Paragraph({
   tabStops: [{ type: TabStopType.RIGHT, position: W }],
-  border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: EMERALD, space: 6 } },
+  border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: BRIGHT, space: 6 } },
   children: [
     new ImageRun({ type: 'png', data: LOGO, transformation: { width: 44, height: 50 } }),
-    new TextRun({ text: `\t${COMPANY.legalName.toUpperCase()}`, font: FONT, size: 18, bold: true, color: NIGHT }),
+    // 9 pt is too small for BRIGHT, so "VERIDIAN" here is the darker green.
+    new TextRun({ text: `\t${NAME_FIRST}`, font: FONT, size: 18, bold: true, color: EMERALD }),
+    new TextRun({ text: ` ${NAME_REST.join(' ')}`, font: FONT, size: 18, bold: true, color: NIGHT }),
   ],
 })] });
 
@@ -128,7 +139,7 @@ const laterHeader = () => new Header({ children: [new Paragraph({
 const footer = () => new Footer({ children: [
   new Paragraph({
     tabStops: [{ type: TabStopType.RIGHT, position: W }],
-    border: { top: { style: BorderStyle.SINGLE, size: 12, color: EMERALD, space: 6 } },
+    border: { top: { style: BorderStyle.SINGLE, size: 12, color: BRIGHT, space: 6 } },
     spacing: { after: 30 },
     children: [
       new TextRun({ text: `${COMPANY.legalName}  ·  RC ${COMPANY.rc}  ·  D-U-N-S ${COMPANY.duns}  ·  ${COMPANY.website}`, font: FONT, size: 15, color: MUTED }),
