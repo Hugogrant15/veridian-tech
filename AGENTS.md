@@ -7,7 +7,7 @@
 > are named, never valued. No personal email addresses, account IDs, client data or revenue
 > belong here. Real secrets live in the Cloudflare dashboard.
 >
-> Last updated: 2026-11-20
+> Last updated: 2026-11-21
 
 Company website for **Veridian Tech Innovations Ltd** (RC 9367650), the makers of EasyPass,
 live at **https://veridiantechinnovationsltd.com**. The repo also holds the company's
@@ -153,6 +153,7 @@ Windows: if a local server hangs, use `127.0.0.1` and kill the leftover process 
 - ✅ Site live; contact form + IT quote sending real mail; email routing and SPF/DKIM/DMARC live.
 - ✅ CI green on `main`; 41 tests passing.
 - ✅ Letterhead, letter template, quotation on the two-green rule (PRs #17–#19, 2026-11-20).
+- ✅ Search title/description name both sides: websites/apps AND IT supply (2026-11-21). Keep both in any rewrite.
 - ⏳ Owner actions: Gmail "Send mail as", signatures installed, live IT-quote test with a PDF,
   Google Business Profile, LinkedIn page, client credit links. Full list: `docs/roadmap.md`.
 - ❓ Unverified: whether an old Vercel integration is still connected (unused); Cloudflare plan tier.

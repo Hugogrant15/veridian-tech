@@ -80,7 +80,7 @@ export default function About() {
     <>
       <Seo
         title="About | Veridian Tech Innovations Ltd"
-        description={`${COMPANY.legalName} is a Lagos software company registered with the CAC under RC ${COMPANY.rcNumber}, and the maker of EasyPass.`}
+        description={`${COMPANY.legalName} is a Lagos software and IT supply company (RC ${COMPANY.rcNumber}), and the maker of EasyPass.`}
       />
       <PageHeader
         tone="dark"

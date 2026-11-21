@@ -18,7 +18,7 @@ export function Footer() {
             <Logo className="h-24 lg:h-28" />
           </Link>
           <p className="max-w-xs leading-relaxed text-body">
-            Websites, online stores and mobile apps for Nigerian businesses, from the makers of EasyPass.
+            Websites, online stores, mobile apps and IT equipment supply for Nigerian businesses, from the makers of EasyPass.
           </p>
           <dl className="space-y-1 text-sm text-muted">
             <div>

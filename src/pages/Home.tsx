@@ -11,8 +11,8 @@ export default function Home() {
   return (
     <>
       <Seo
-        title="Veridian Tech Innovations Ltd | Websites, online stores and apps"
-        description="Veridian Tech Innovations Ltd (RC 9367650) designs and builds websites, online stores and mobile apps for Nigerian businesses, and is the maker of EasyPass."
+        title="Veridian Tech Innovations Ltd | Websites, apps and IT supply"
+        description="Veridian Tech Innovations Ltd (RC 9367650) builds websites, online stores and mobile apps, and supplies IT equipment across Nigeria. The maker of EasyPass."
       />
       <Hero />
       <ServicesSection />
